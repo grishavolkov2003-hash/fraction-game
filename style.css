@@ -1,15 +1,4 @@
-@font-face {
-  font-family: 'Gilroy';
-  src: url('https://db.onlinewebfonts.com/t/1dc8ecd8056a5ea7aa7de1db42b5b639.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Gilroy';
-  src: url('https://db.onlinewebfonts.com/t/8d49d0d8de6f1a007a4ab8e921e65f04.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-}
+/* Gilroy → system font fallback */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -37,7 +26,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Gilroy', -apple-system, sans-serif;
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   line-height: 1.4;
   user-select: none;
