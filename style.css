@@ -534,160 +534,257 @@ body {
   transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 
+/* ── Hint card header ─────────────────────────────── */
+.hint-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .hint-title {
   font-family: 'Delta Gothic One', sans-serif;
   font-size: 20px;
   color: var(--text);
-  margin-bottom: 16px;
-  text-align: center;
 }
 
-.hint-steps {
+.btn-skip {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* ── Animation stage ──────────────────────────────── */
+.anim-stage {
+  min-height: 200px;
+  max-height: 52vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-  max-height: 55vh;
-  overflow-y: auto;
+  gap: 12px;
+  padding: 8px 0 16px;
+  margin-bottom: 16px;
 }
 
-/* ── Animated step rows ───────────────────────────── */
-.anim-step {
-  animation: fadeInUp 0.35s ease both;
-  opacity: 0;
-}
-
-.h-formula {
+/* Problem row — big fractions */
+.av-prob-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  padding: 12px 8px;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
+  padding: 8px 0;
 }
 
-.h-op {
+.av-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 38px;
+  line-height: 1.1;
+}
+
+.av-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 28px;
+  justify-content: center;
+}
+
+.av-val {
+  display: inline-block;
+  position: relative;
+}
+
+.av-fline {
+  width: calc(100% + 8px);
+  min-width: 34px;
+  height: 3px;
+  background: var(--text);
+  border-radius: 2px;
+  margin: 3px 0;
+}
+
+.av-fline-green {
+  background: var(--correct);
+}
+
+.av-op-sym {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 32px;
+  color: var(--text-muted);
+  transition: color 0.3s;
+}
+
+.av-op-sym.op-switched {
+  color: var(--accent);
+  animation: opPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Strike-through animation */
+.av-strikeline {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 50%;
+  height: 3px;
+  background: var(--wrong);
+  border-radius: 2px;
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: left center;
+  animation: strikeGrow 0.38s ease forwards;
+}
+
+@keyframes strikeGrow {
+  to { transform: translateY(-50%) scaleX(1); }
+}
+
+/* Replacement arrow + new value */
+.av-rarrow {
+  font-size: 16px;
+  color: var(--text-muted);
+  opacity: 0;
+  animation: fadeIn 0.2s ease 0.15s both;
+  margin: 0 1px;
+}
+
+.av-new-val {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 0.9em;
+  color: var(--correct);
+  opacity: 0;
+  animation: numPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+/* Highlight classes */
+.av-val.hl-n {
+  color: var(--accent);
+  transition: color 0.25s;
+}
+
+.av-val.hl-d {
+  color: #FF9500;
+  transition: color 0.25s;
+}
+
+/* Calc rows */
+.av-calc-row {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  animation: fadeInUp 0.3s ease both;
+  line-height: 1.5;
+}
+
+.av-calc-row strong {
+  font-size: 17px;
+}
+
+.av-tag {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #aaa;
+  margin-left: 6px;
+}
+
+.hl-n {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.hl-d {
+  color: #FF9500;
+  font-weight: 700;
+}
+
+/* Result row (intermediate, with possible strike) */
+.av-res-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  animation: fadeInUp 0.3s ease both;
+}
+
+.av-res-row .av-frac {
+  font-size: 32px;
+}
+
+.av-hidden {
+  display: none;
+}
+
+/* Final big green result */
+.av-final-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 0 8px;
+  animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.av-frac-final {
+  font-size: 52px;
+  color: var(--correct);
+}
+
+.av-frac-final .av-val {
+  color: var(--correct);
+}
+
+.av-whole-result {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 52px;
+  color: var(--correct);
+}
+
+.av-eq-sym {
   font-family: 'Delta Gothic One', sans-serif;
   font-size: 28px;
   color: var(--text-muted);
 }
 
-.h-frac {
+/* Divide flip animation */
+.av-flip-wrap {
   display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: 'Delta Gothic One', sans-serif;
-  font-size: 26px;
-  line-height: 1.1;
 }
 
-.h-num, .h-den {
-  line-height: 1.2;
-  min-width: 20px;
-  text-align: center;
+.av-flip-wrap.flipping .av-frac {
+  animation: fracFlip 0.5s ease forwards;
 }
 
-.h-line {
-  width: 100%;
-  min-width: 28px;
-  height: 2.5px;
-  background: var(--text);
-  border-radius: 2px;
-  margin: 2px 0;
+@keyframes fracFlip {
+  0%   { transform: scaleX(1); }
+  48%  { transform: scaleX(0.05); }
+  52%  { transform: scaleX(0.05); }
+  100% { transform: scaleX(1); }
 }
 
-.h-calc {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-family: 'Gilroy', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 10px 14px;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
+@keyframes opPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
 }
 
-.h-calc strong {
-  font-size: 18px;
-  color: var(--text);
-}
-
-.h-note {
-  font-family: 'Gilroy', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 8px;
-}
-
-.h-note strong {
-  color: var(--accent);
-  font-size: 17px;
-}
-
-.h-hl-n {
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.h-hl-d {
-  color: #FF9500;
-  font-weight: 700;
-}
-
-.h-hl-n .h-frac .h-num,
-.h-hl-n .h-frac .h-den,
-.h-hl-n .h-frac .h-line {
-  color: var(--accent);
-  background: var(--accent);
-}
-
-.h-tag {
-  font-family: 'Gilroy', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #aaa;
-  margin-left: 4px;
-}
-
-.h-result {
-  display: flex;
-  justify-content: center;
-  padding: 12px 8px;
-}
-
-.h-final .h-result .h-frac {
-  font-size: 38px;
-  color: var(--correct);
-}
-
-.h-final .h-result .h-line {
-  background: var(--correct);
-  height: 3px;
-}
-
-.h-final {
-  background: #F0FFF4;
-  border-radius: var(--radius-sm);
-}
-
-.h-flip {
-  display: inline-flex;
-  animation: flipIn 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) both;
-}
-
-@keyframes flipIn {
-  0% { transform: rotateY(-90deg) scaleX(0.3); opacity: 0; }
-  60% { transform: rotateY(10deg); }
-  100% { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+@keyframes numPop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .btn-hint-ok {
@@ -701,8 +798,16 @@ body {
   font-size: 20px;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(123,79,224,0.3);
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease, opacity 0.25s ease;
   -webkit-appearance: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-hint-ok.visible {
+  opacity: 1;
+  pointer-events: all;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .btn-hint-ok:active {
