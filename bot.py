@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppI
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 TOKEN = os.environ["BOT_TOKEN"]
-WEBAPP_URL = "https://fraction-game.serveousercontent.com"
+WEBAPP_URL = "https://fraction-game.ddns.net"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
