@@ -1,6 +1,16 @@
 services:
   fraction-game:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "3721:80"
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=8339359469:AAFbPscEVLGtvCsAruuP--ws3fK89bvf1SQ
