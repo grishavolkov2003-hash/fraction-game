@@ -5,8 +5,8 @@ const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.ready();
   tg.expand();
-  tg.setHeaderColor('#F5F5F7');
-  tg.setBackgroundColor('#F5F5F7');
+  try { tg.setHeaderColor('#F5F5F7'); } catch(e) {}
+  try { tg.setBackgroundColor('#F5F5F7'); } catch(e) {}
 }
 
 // ── Math Utils ────────────────────────────────────
