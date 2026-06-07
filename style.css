@@ -456,6 +456,50 @@ body {
   opacity: 1;
 }
 
+/* ── HINT TRIGGER BUTTON ──────────────────────────── */
+.hint-trigger-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-hint-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 2px solid #E0D4F7;
+  border-radius: 99px;
+  background: var(--white);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: 'Gilroy', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(123,79,224,0.1);
+  transition: all 0.18s ease;
+}
+
+.btn-hint-trigger:active {
+  transform: scale(0.95);
+}
+
+.btn-hint-trigger.used {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.bulb-icon {
+  font-size: 18px;
+  animation: bulgePulse 2s ease infinite;
+  display: inline-block;
+}
+
+@keyframes bulgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
 /* ── HINT OVERLAY ─────────────────────────────────── */
 .hint-overlay {
   position: fixed;
@@ -503,52 +547,147 @@ body {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 20px;
+  max-height: 55vh;
+  overflow-y: auto;
 }
 
-.hint-answer {
+/* ── Animated step rows ───────────────────────────── */
+.anim-step {
+  animation: fadeInUp 0.35s ease both;
+  opacity: 0;
+}
+
+.h-formula {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-family: 'Delta Gothic One', sans-serif;
-  font-size: 22px;
-  color: var(--correct);
-  padding: 12px 16px;
-  background: #F0FFF4;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 8px;
+  background: var(--bg);
   border-radius: var(--radius-sm);
-  margin-bottom: 4px;
 }
 
-.hint-frac {
+.h-op {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 28px;
+  color: var(--text-muted);
+}
+
+.h-frac {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 26px;
   line-height: 1.1;
-  border-left: 2px solid var(--correct);
-  padding-left: 8px;
 }
 
-.hint-frac span:first-child {
-  border-bottom: 2px solid var(--correct);
-  padding-bottom: 2px;
+.h-num, .h-den {
+  line-height: 1.2;
   min-width: 20px;
   text-align: center;
 }
 
-.hint-frac span:last-child {
-  padding-top: 2px;
-  min-width: 20px;
-  text-align: center;
+.h-line {
+  width: 100%;
+  min-width: 28px;
+  height: 2.5px;
+  background: var(--text);
+  border-radius: 2px;
+  margin: 2px 0;
 }
 
-.hint-step {
+.h-calc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
   font-family: 'Gilroy', sans-serif;
-  font-size: 15px;
-  color: var(--text);
+  font-size: 16px;
   font-weight: 500;
   padding: 10px 14px;
   background: var(--bg);
   border-radius: var(--radius-sm);
-  line-height: 1.5;
+}
+
+.h-calc strong {
+  font-size: 18px;
+  color: var(--text);
+}
+
+.h-note {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px;
+}
+
+.h-note strong {
+  color: var(--accent);
+  font-size: 17px;
+}
+
+.h-hl-n {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.h-hl-d {
+  color: #FF9500;
+  font-weight: 700;
+}
+
+.h-hl-n .h-frac .h-num,
+.h-hl-n .h-frac .h-den,
+.h-hl-n .h-frac .h-line {
+  color: var(--accent);
+  background: var(--accent);
+}
+
+.h-tag {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #aaa;
+  margin-left: 4px;
+}
+
+.h-result {
+  display: flex;
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.h-final .h-result .h-frac {
+  font-size: 38px;
+  color: var(--correct);
+}
+
+.h-final .h-result .h-line {
+  background: var(--correct);
+  height: 3px;
+}
+
+.h-final {
+  background: #F0FFF4;
+  border-radius: var(--radius-sm);
+}
+
+.h-flip {
+  display: inline-flex;
+  animation: flipIn 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+
+@keyframes flipIn {
+  0% { transform: rotateY(-90deg) scaleX(0.3); opacity: 0; }
+  60% { transform: rotateY(10deg); }
+  100% { transform: rotateY(0deg) scaleX(1); opacity: 1; }
 }
 
 .btn-hint-ok {

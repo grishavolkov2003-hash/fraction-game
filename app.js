@@ -219,47 +219,84 @@ function generateChoices(correct, operation, problem) {
   return shuffle([correct, ...wrongs]);
 }
 
-// ── Hint Builder ──────────────────────────────────
-function buildHint(problem, answer) {
-  const steps = [];
+// ── Animated Hint Builder ─────────────────────────
+function hF(n, d) {
+  return `<span class="h-frac"><span class="h-num">${n}</span><span class="h-line"></span><span class="h-den">${d}</span></span>`;
+}
+
+function buildAnimatedHint(problem, answer) {
+  const row = (content, idx, extra) =>
+    `<div class="anim-step${extra ? ' ' + extra : ''}" style="animation-delay:${0.05 + idx * 0.42}s">${content}</div>`;
+
+  const rows = [];
 
   if (problem.type === 'binary') {
     const { left: a, right: b, op } = problem;
 
     if (op === '×') {
-      steps.push(`${a.n} × ${b.n} = ${a.n * b.n} (числители)`);
-      steps.push(`${a.d} × ${b.d} = ${a.d * b.d} (знаменатели)`);
-      const raw = simplify(a.n * b.n, a.d * b.d);
+      rows.push(row(
+        `<div class="h-formula">${hF(a.n, a.d)} <span class="h-op">×</span> ${hF(b.n, b.d)}</div>`, 0));
+      rows.push(row(
+        `<div class="h-calc"><span class="h-hl-n">${a.n} × ${b.n}</span> = <strong>${a.n * b.n}</strong><span class="h-tag">числители</span></div>`, 1));
+      rows.push(row(
+        `<div class="h-calc"><span class="h-hl-d">${a.d} × ${b.d}</span> = <strong>${a.d * b.d}</strong><span class="h-tag">знаменатели</span></div>`, 2));
       const g = gcd(a.n * b.n, a.d * b.d);
-      if (g > 1) steps.push(`Сокращаем на ${g}: ${raw.n}/${raw.d}`);
+      if (g > 1) {
+        rows.push(row(
+          `<div class="h-calc">Сокращаем на <strong>${g}</strong>: ${hF(a.n * b.n, a.d * b.d)} → ${hF(answer.n, answer.d)}</div>`, 3));
+        rows.push(row(`<div class="h-result">${hF(answer.n, answer.d)}</div>`, 4, 'h-final'));
+      } else {
+        rows.push(row(`<div class="h-result">${hF(answer.n, answer.d)}</div>`, 3, 'h-final'));
+      }
 
     } else if (op === '÷') {
-      steps.push(`Переворачиваем ${b.n}/${b.d} → ${b.d}/${b.n}`);
-      steps.push(`${a.n} × ${b.d} = ${a.n * b.d}`);
-      steps.push(`${a.d} × ${b.n} = ${a.d * b.n}`);
-      const g = gcd(a.n * b.d, a.d * b.n);
-      if (g > 1) steps.push(`Сокращаем на ${g}`);
+      rows.push(row(
+        `<div class="h-formula">${hF(a.n, a.d)} <span class="h-op">÷</span> ${hF(b.n, b.d)}</div>`, 0));
+      rows.push(row(
+        `<div class="h-note">Переворачиваем вторую дробь</div>`, 1));
+      rows.push(row(
+        `<div class="h-formula">${hF(a.n, a.d)} <span class="h-op">×</span> <span class="h-flip">${hF(b.d, b.n)}</span></div>`, 2));
+      rows.push(row(
+        `<div class="h-calc"><span class="h-hl-n">${a.n} × ${b.d}</span> = <strong>${a.n * b.d}</strong><span class="h-tag">числители</span></div>`, 3));
+      rows.push(row(
+        `<div class="h-calc"><span class="h-hl-d">${a.d} × ${b.n}</span> = <strong>${a.d * b.n}</strong><span class="h-tag">знаменатели</span></div>`, 4));
+      rows.push(row(`<div class="h-result">${hF(answer.n, answer.d)}</div>`, 5, 'h-final'));
 
     } else if (op === '+') {
       const l = lcm(a.d, b.d);
-      steps.push(`НОК(${a.d}, ${b.d}) = ${l}`);
       const an = a.n * (l / a.d);
       const bn = b.n * (l / b.d);
-      steps.push(`${a.n}/${a.d} = ${an}/${l}`);
-      steps.push(`${b.n}/${b.d} = ${bn}/${l}`);
-      steps.push(`${an} + ${bn} = ${an + bn}`);
+      rows.push(row(
+        `<div class="h-formula">${hF(a.n, a.d)} <span class="h-op">+</span> ${hF(b.n, b.d)}</div>`, 0));
+      rows.push(row(
+        `<div class="h-note">НОК(${a.d}, ${b.d}) = <strong>${l}</strong></div>`, 1));
+      rows.push(row(
+        `<div class="h-calc">${hF(a.n, a.d)} → <span class="h-hl-n">${hF(an, l)}</span></div>`, 2));
+      rows.push(row(
+        `<div class="h-calc">${hF(b.n, b.d)} → <span class="h-hl-n">${hF(bn, l)}</span></div>`, 3));
+      rows.push(row(
+        `<div class="h-calc"><span class="h-hl-n">${an}</span> + <span class="h-hl-n">${bn}</span> = <strong>${an + bn}</strong></div>`, 4));
       const g = gcd(an + bn, l);
-      if (g > 1) steps.push(`Сокращаем на ${g}`);
+      if (g > 1) {
+        rows.push(row(`<div class="h-calc">Сокращаем на <strong>${g}</strong></div>`, 5));
+        rows.push(row(`<div class="h-result">${hF(answer.n, answer.d)}</div>`, 6, 'h-final'));
+      } else {
+        rows.push(row(`<div class="h-result">${hF(answer.n, answer.d)}</div>`, 5, 'h-final'));
+      }
     }
   } else {
     const f = problem.frac;
     const g = gcd(f.n, f.d);
-    steps.push(`НОД(${f.n}, ${f.d}) = ${g}`);
-    steps.push(`${f.n} ÷ ${g} = ${f.n / g}`);
-    steps.push(`${f.d} ÷ ${g} = ${f.d / g}`);
+    rows.push(row(`<div class="h-formula">${hF(f.n, f.d)}</div>`, 0));
+    rows.push(row(`<div class="h-note">НОД(${f.n}, ${f.d}) = <strong>${g}</strong></div>`, 1));
+    rows.push(row(
+      `<div class="h-calc"><span class="h-hl-n">${f.n}</span> ÷ ${g} = <strong>${f.n / g}</strong><span class="h-tag">числитель</span></div>`, 2));
+    rows.push(row(
+      `<div class="h-calc"><span class="h-hl-d">${f.d}</span> ÷ ${g} = <strong>${f.d / g}</strong><span class="h-tag">знаменатель</span></div>`, 3));
+    rows.push(row(`<div class="h-result">${hF(answer.n, answer.d)}</div>`, 4, 'h-final'));
   }
 
-  return steps;
+  return rows.join('');
 }
 
 // ── Sounds (Web Audio API) ────────────────────────
@@ -390,6 +427,7 @@ const state = {
   combo: 0,
   maxCombo: 0,
   answered: false,
+  hintUsed: false,
   timerInterval: null,
   timerStart: null,
   timerDuration: 20000,
@@ -445,32 +483,8 @@ function addScore(base, bonus) {
 
 // ── Hint Popup ────────────────────────────────────
 function showHint(problem, answer) {
-  const steps = buildHint(problem, answer);
   const stepsEl = document.getElementById('hint-steps');
-  stepsEl.innerHTML = '';
-
-  // show correct answer
-  const answerEl = document.createElement('div');
-  answerEl.className = 'hint-answer';
-  const s = simplify(answer.n, answer.d);
-  if (s.d === 1) {
-    answerEl.textContent = `Ответ: ${s.n}`;
-  } else {
-    answerEl.innerHTML = `Ответ: `;
-    const fracWrap = document.createElement('span');
-    fracWrap.className = 'hint-frac';
-    fracWrap.innerHTML = `<span>${s.n}</span><span>${s.d}</span>`;
-    answerEl.appendChild(fracWrap);
-  }
-  stepsEl.appendChild(answerEl);
-
-  steps.forEach((step, i) => {
-    const el = document.createElement('div');
-    el.className = 'hint-step';
-    el.textContent = `${i + 1}. ${step}`;
-    stepsEl.appendChild(el);
-  });
-
+  stepsEl.innerHTML = buildAnimatedHint(problem, answer);
   document.getElementById('hint-overlay').classList.add('active');
 }
 
@@ -524,6 +538,10 @@ function handleAnswer(chosen, btn, correct) {
 
 // ── Question Flow ─────────────────────────────────
 function loadQuestion() {
+  state.hintUsed = false;
+  document.getElementById('btn-hint-trigger').disabled = false;
+  document.getElementById('btn-hint-trigger').classList.remove('used');
+
   const op = state.ops[state.currentQ % state.ops.length];
   const task = generateTask(op, state.level);
   state.currentTask = task;
@@ -611,6 +629,7 @@ function startGame() {
   state.correct = 0;
   state.combo = 0;
   state.maxCombo = 0;
+  state.hintUsed = false;
   document.getElementById('score-display').textContent = '0 очков';
   buildOps();
   showScreen('screen-game');
@@ -676,5 +695,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-hint-ok').addEventListener('click', () => {
     hideHint();
     nextQuestion();
+  });
+
+  document.getElementById('btn-hint-trigger').addEventListener('click', () => {
+    if (state.answered || state.hintUsed || !state.currentTask) return;
+    state.hintUsed = true;
+    state.answered = true;
+    state.combo = 0;
+    stopTimer();
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      b.disabled = true;
+      if (b._fracData && fracEqual(b._fracData, state.currentTask.answer)) b.classList.add('reveal');
+    });
+    document.getElementById('btn-hint-trigger').classList.add('used');
+    showHint(state.currentTask.problem, state.currentTask.answer);
   });
 });
