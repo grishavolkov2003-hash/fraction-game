@@ -8,7 +8,10 @@ WEBAPP_URL = "https://fraction-game.ddns.net"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("🎮 Играть", web_app=WebAppInfo(url=WEBAPP_URL))]]
+    keyboard = [
+        [InlineKeyboardButton("🎮 Играть в Telegram", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton("🌐 Открыть в браузере", url=WEBAPP_URL)],
+    ]
     await update.message.reply_text(
         "Привет! Это тренажёр дробей.\n\nЗдесь можно тренировать сложение, умножение, деление и сокращение дробей. Два уровня сложности, таймер и очки.\n\nНажми кнопку ниже 👇",
         reply_markup=InlineKeyboardMarkup(keyboard),
