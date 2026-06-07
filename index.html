@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Дроби</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Delta+Gothic+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="home-inner">
+      <div class="logo">
+        <span class="logo-frac">
+          <span class="logo-num">¾</span>
+        </span>
+        <h1 class="title">Дроби</h1>
+        <p class="subtitle">Тренажёр</p>
+      </div>
+
+      <div class="section-label">Сложность</div>
+      <div class="btn-group" id="level-group">
+        <button class="toggle-btn active" data-value="easy">Лёгкий</button>
+        <button class="toggle-btn" data-value="hard">Сложный</button>
+      </div>
+
+      <div class="section-label">Действие</div>
+      <div class="btn-group wrap" id="op-group">
+        <button class="toggle-btn active" data-value="all">Все</button>
+        <button class="toggle-btn" data-value="multiply">Умножение</button>
+        <button class="toggle-btn" data-value="divide">Деление</button>
+        <button class="toggle-btn" data-value="add">Сложение</button>
+        <button class="toggle-btn" data-value="simplify">Сократи</button>
+      </div>
+
+      <button class="btn-start" id="btn-start">Начать</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <div class="progress-info">
+        <span id="q-counter">1 / 10</span>
+        <span id="score-display">0 очков</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar" id="timer-bar"></div>
+      </div>
+    </div>
+
+    <div class="game-body">
+      <div class="problem-wrap" id="problem-wrap">
+        <!-- dynamically filled -->
+      </div>
+
+      <div class="choices-grid" id="choices-grid">
+        <!-- dynamically filled -->
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="screen-results" class="screen">
+    <div class="results-inner">
+      <div class="result-emoji" id="result-emoji">🎉</div>
+      <div class="result-score" id="result-score">0</div>
+      <div class="result-label">очков</div>
+      <div class="result-stats">
+        <div class="stat-item">
+          <div class="stat-val" id="stat-correct">0</div>
+          <div class="stat-name">правильно</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-combo">0</div>
+          <div class="stat-name">макс серия</div>
+        </div>
+      </div>
+      <button class="btn-start" id="btn-restart">Ещё раз</button>
+      <button class="btn-home" id="btn-home">На главную</button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK OVERLAY -->
+  <div class="feedback-overlay" id="feedback-overlay"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

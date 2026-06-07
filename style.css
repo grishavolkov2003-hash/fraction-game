@@ -1,0 +1,468 @@
+@font-face {
+  font-family: 'Gilroy';
+  src: url('https://db.onlinewebfonts.com/t/1dc8ecd8056a5ea7aa7de1db42b5b639.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Gilroy';
+  src: url('https://db.onlinewebfonts.com/t/8d49d0d8de6f1a007a4ab8e921e65f04.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --bg: #F5F5F7;
+  --white: #FFFFFF;
+  --accent: #7B4FE0;
+  --accent-light: #EDE6FA;
+  --text: #1A1A1A;
+  --text-muted: #888;
+  --correct: #34C759;
+  --wrong: #FF3B30;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Gilroy', -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  user-select: none;
+}
+
+/* ── SCREENS ─────────────────────────────────────── */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.screen.active { display: flex; }
+
+/* ── HOME ─────────────────────────────────────────── */
+.home-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 40px;
+  gap: 0;
+  min-height: 100%;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.logo-frac {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 64px;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 36px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+.section-label {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  align-self: flex-start;
+  margin-bottom: 10px;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-group.wrap {
+  flex-wrap: wrap;
+}
+
+.toggle-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-muted);
+  font-family: 'Gilroy', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: var(--shadow);
+}
+
+.toggle-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.btn-start {
+  width: 100%;
+  padding: 18px;
+  margin-top: 36px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(123,79,224,0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  -webkit-appearance: none;
+}
+
+.btn-start:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 10px rgba(123,79,224,0.25);
+}
+
+/* ── GAME ─────────────────────────────────────────── */
+.game-header {
+  padding: 16px 20px 12px;
+  background: var(--white);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.progress-info span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+#score-display {
+  color: var(--accent);
+}
+
+.progress-bar-wrap {
+  height: 4px;
+  background: #E8E8EC;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+  width: 10%;
+}
+
+.timer-bar-wrap {
+  height: 3px;
+  background: #E8E8EC;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.timer-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  width: 100%;
+  transition: width 0.1s linear, background-color 0.5s ease;
+}
+
+.timer-bar.urgent {
+  background: var(--wrong);
+}
+
+.game-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px 32px;
+  gap: 32px;
+}
+
+/* ── PROBLEM ──────────────────────────────────────── */
+.problem-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  animation: fadeIn 0.25s ease;
+}
+
+.op-symbol {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 36px;
+  color: var(--text-muted);
+  line-height: 1;
+  margin: 0 4px;
+}
+
+.fraction {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.frac-num, .frac-den {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 42px;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.frac-line {
+  width: 100%;
+  height: 3px;
+  background: var(--text);
+  border-radius: 2px;
+  margin: 4px 0;
+  min-width: 48px;
+}
+
+.problem-label {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 16px;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 600;
+  width: 100%;
+}
+
+/* ── CHOICES ──────────────────────────────────────── */
+.choices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+  padding: 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--white);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.15s ease;
+  animation: fadeInUp 0.2s ease both;
+}
+
+.choice-btn:nth-child(2) { animation-delay: 0.03s; }
+.choice-btn:nth-child(3) { animation-delay: 0.06s; }
+.choice-btn:nth-child(4) { animation-delay: 0.09s; }
+
+.choice-btn:active {
+  transform: scale(0.97);
+}
+
+.choice-btn.correct {
+  border-color: var(--correct);
+  background: #F0FFF4;
+}
+
+.choice-btn.wrong {
+  border-color: var(--wrong);
+  background: #FFF5F5;
+}
+
+.choice-btn.reveal {
+  border-color: var(--correct);
+  background: #F0FFF4;
+}
+
+.choice-btn .fraction .frac-num,
+.choice-btn .fraction .frac-den {
+  font-size: 28px;
+}
+
+.choice-btn .fraction .frac-line {
+  min-width: 32px;
+}
+
+.choice-btn .whole-num {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 32px;
+  color: var(--text);
+}
+
+/* ── RESULTS ──────────────────────────────────────── */
+.results-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px 48px;
+  min-height: 100%;
+  gap: 8px;
+}
+
+.result-emoji {
+  font-size: 64px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.result-score {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 80px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.result-label {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.result-stats {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-val {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 40px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-name {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-home {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--accent);
+  font-family: 'Gilroy', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-home:active {
+  background: var(--accent-light);
+}
+
+/* ── FEEDBACK OVERLAY ─────────────────────────────── */
+.feedback-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 0;
+  z-index: 10;
+}
+
+.feedback-overlay.show-correct {
+  background: rgba(52, 199, 89, 0.12);
+  opacity: 1;
+}
+
+.feedback-overlay.show-wrong {
+  background: rgba(255, 59, 48, 0.12);
+  opacity: 1;
+}
+
+/* ── ANIMATIONS ───────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.pop {
+  animation: pop 0.25s ease;
+}

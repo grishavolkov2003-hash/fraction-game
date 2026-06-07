@@ -1,0 +1,6 @@
+services:
+  fraction-game:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3721:80"
