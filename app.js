@@ -342,12 +342,13 @@ function animMultiply(stage, a, b, answer) {
   const rawN = a.n * b.n, rawD = a.d * b.d;
   const g = gcd(rawN, rawD);
 
-  const resRow = document.createElement('div');
-  resRow.className = 'av-res-row av-hidden';
-  resRow.id = 'av-res';
-  resRow.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'mr');
-  stage.appendChild(resRow);
-  at(t, () => { document.getElementById('av-res')?.classList.remove('av-hidden'); stage.scrollTop = stage.scrollHeight; });
+  at(t, () => {
+    const row = document.createElement('div');
+    row.className = 'av-res-row';
+    row.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'mr');
+    stage.appendChild(row);
+    stage.scrollTop = stage.scrollHeight;
+  });
   t += 900;
 
   if (g > 1) {
@@ -400,12 +401,13 @@ function animDivide(stage, a, b, answer) {
   const rawN = a.n * b.d, rawD = a.d * b.n;
   const g = gcd(rawN, rawD);
 
-  const resRow = document.createElement('div');
-  resRow.className = 'av-res-row av-hidden';
-  resRow.id = 'av-res';
-  resRow.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'dr');
-  stage.appendChild(resRow);
-  at(t, () => { document.getElementById('av-res')?.classList.remove('av-hidden'); stage.scrollTop = stage.scrollHeight; });
+  at(t, () => {
+    const row = document.createElement('div');
+    row.className = 'av-res-row';
+    row.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'dr');
+    stage.appendChild(row);
+    stage.scrollTop = stage.scrollHeight;
+  });
   t += 900;
 
   if (g > 1) {
@@ -453,12 +455,13 @@ function animAdd(stage, a, b, answer) {
   const rawN = an + bn;
   const g = gcd(rawN, l);
 
-  const resRow = document.createElement('div');
-  resRow.className = 'av-res-row av-hidden';
-  resRow.id = 'av-res';
-  resRow.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, l, 'ar');
-  stage.appendChild(resRow);
-  at(t, () => { document.getElementById('av-res')?.classList.remove('av-hidden'); stage.scrollTop = stage.scrollHeight; });
+  at(t, () => {
+    const row = document.createElement('div');
+    row.className = 'av-res-row';
+    row.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, l, 'ar');
+    stage.appendChild(row);
+    stage.scrollTop = stage.scrollHeight;
+  });
   t += 900;
 
   if (g > 1) {

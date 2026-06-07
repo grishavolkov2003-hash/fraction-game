@@ -640,11 +640,12 @@ body {
   border-radius: 2px;
   transform: translateY(-50%) scaleX(0);
   transform-origin: left center;
-  animation: strikeGrow 0.55s ease forwards;
+  animation: strikeGrow 0.65s linear forwards;
 }
 
 @keyframes strikeGrow {
-  to { transform: translateY(-50%) scaleX(1); }
+  0%   { transform: translateY(-50%) scaleX(0); }
+  100% { transform: translateY(-50%) scaleX(1); }
 }
 
 /* Replacement arrow + new value */
@@ -652,8 +653,8 @@ body {
   font-size: 16px;
   color: var(--text-muted);
   opacity: 0;
-  animation: fadeIn 0.35s ease 0.1s both;
-  margin: 0 1px;
+  animation: gentleFade 0.5s ease 0.05s both;
+  margin: 0 2px;
 }
 
 .av-new-val {
@@ -661,7 +662,7 @@ body {
   font-size: 0.9em;
   color: var(--correct);
   opacity: 0;
-  animation: numPop 0.55s cubic-bezier(0.25, 1.0, 0.5, 1) 0.2s both;
+  animation: gentleSlideIn 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
 }
 
 /* Highlight classes */
@@ -685,7 +686,7 @@ body {
   padding: 10px 14px;
   background: var(--bg);
   border-radius: var(--radius-sm);
-  animation: fadeInUp 0.45s ease both;
+  animation: gentleRise 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
   line-height: 1.5;
 }
 
@@ -718,15 +719,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  animation: fadeInUp 0.3s ease both;
+  animation: gentleRise 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .av-res-row .av-frac {
   font-size: 32px;
-}
-
-.av-hidden {
-  display: none;
 }
 
 /* Final big green result */
@@ -736,7 +733,7 @@ body {
   justify-content: center;
   gap: 10px;
   padding: 16px 0 8px;
-  animation: popIn 0.6s cubic-bezier(0.25, 1.2, 0.5, 1) both;
+  animation: gentleRise 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .av-frac-final {
@@ -778,14 +775,26 @@ body {
 
 @keyframes opPop {
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.35); }
-  70%  { transform: scale(0.95); }
+  40%  { transform: scale(1.25); }
   100% { transform: scale(1); }
 }
 
-@keyframes numPop {
-  from { opacity: 0; transform: scale(0.6); }
-  to   { opacity: 1; transform: scale(1); }
+/* Gentle rise — for calc rows and result rows */
+@keyframes gentleRise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Gentle fade — for arrow */
+@keyframes gentleFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Gentle slide in from left — for new values */
+@keyframes gentleSlideIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 .btn-hint-ok {
