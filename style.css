@@ -648,6 +648,20 @@ body {
   100% { transform: translateY(-50%) scaleX(1); }
 }
 
+@keyframes hlNum {
+  from { color: inherit; }
+  to   { color: var(--accent); }
+}
+
+@keyframes hlDen {
+  from { color: inherit; }
+  to   { color: #FF9500; }
+}
+
+@keyframes dimVal {
+  to { opacity: 0.3; }
+}
+
 /* Replacement arrow + new value */
 .av-rarrow {
   font-size: 16px;

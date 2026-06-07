@@ -240,68 +240,59 @@ function makeAVFrac(n, d, prefix) {
     </div>`;
 }
 
-function avHighlight(slotId, cls) {
-  const el = document.getElementById(slotId);
-  if (el) el.querySelector('.av-val')?.classList.add(cls);
+// ── Pre-render HTML builders ──────────────────────
+// All animation timings are baked into inline styles as animation-delay.
+// stage.innerHTML is set ONCE so layout never shifts.
+
+const S = 1.0; // seconds per step
+
+function hSlot(id, val, opts) {
+  // opts: { hlAnim, strikeDelay, newVal }
+  let inner;
+  if (opts && opts.strikeDelay != null) {
+    const sd = opts.strikeDelay;
+    inner = `
+      <span class="av-val" style="animation:dimVal 0.5s ease ${sd}s forwards">${val}
+        <div class="av-strikeline" style="animation:strikeGrow 0.65s linear ${sd}s forwards"></div>
+      </span>
+      <span class="av-rarrow" style="opacity:0;animation:gentleFade 0.4s ease ${sd+0.55}s both">→</span>
+      <span class="av-new-val" style="opacity:0;animation:gentleSlideIn 0.55s cubic-bezier(0.4,0,0.2,1) ${sd+0.6}s both">${opts.newVal}</span>`;
+  } else if (opts && opts.hlAnim) {
+    inner = `<span class="av-val" style="animation:${opts.hlAnim}">${val}</span>`;
+  } else {
+    inner = `<span class="av-val">${val}</span>`;
+  }
+  return `<div class="av-slot"${id ? ` id="${id}"` : ''}>${inner}</div>`;
 }
 
-function avStrike(slotId) {
-  const slot = document.getElementById(slotId);
-  if (!slot) return;
-  const val = slot.querySelector('.av-val');
-  if (!val) return;
-  const line = document.createElement('div');
-  line.className = 'av-strikeline';
-  val.style.position = 'relative';
-  val.appendChild(line);
-  setTimeout(() => {
-    val.style.opacity = '0.3';
-    val.style.transition = 'opacity 0.3s';
-  }, 380);
+function hFrac(n, d, prefix, nOpts, dOpts) {
+  return `<div class="av-frac">
+    ${hSlot(prefix ? prefix+'n' : '', n, nOpts)}
+    <div class="av-fline"></div>
+    ${hSlot(prefix ? prefix+'d' : '', d, dOpts)}
+  </div>`;
 }
 
-function avReplace(slotId, newVal) {
-  const slot = document.getElementById(slotId);
-  if (!slot) return;
-  const arrow = document.createElement('span');
-  arrow.className = 'av-rarrow';
-  arrow.textContent = '→';
-  const newEl = document.createElement('span');
-  newEl.className = 'av-new-val';
-  newEl.textContent = newVal;
-  slot.appendChild(arrow);
-  slot.appendChild(newEl);
+function hCalc(content, delayS) {
+  return `<div class="av-calc-row" style="opacity:0;animation:gentleRise 0.55s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">${content}</div>`;
 }
 
-function addCalcRow(stage, html, delay) {
-  at(delay, () => {
-    const row = document.createElement('div');
-    row.className = 'av-calc-row';
-    row.innerHTML = html;
-    stage.appendChild(row);
-    stage.scrollTop = stage.scrollHeight;
-  });
+function hRes(fracHTML, delayS) {
+  return `<div class="av-res-row" style="opacity:0;animation:gentleRise 0.6s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">
+    <span class="av-eq-sym">=</span>${fracHTML}</div>`;
 }
 
-function showFinalResult(stage, answer, delay) {
-  at(delay, () => {
-    const s = simplify(answer.n, answer.d);
-    const final = document.createElement('div');
-    final.className = 'av-final-row';
-    if (s.d === 1) {
-      final.innerHTML = `<span class="av-eq-sym">=</span><span class="av-whole-result">${s.n}</span>`;
-    } else {
-      final.innerHTML = `<span class="av-eq-sym">=</span>
-        <div class="av-frac av-frac-final">
-          <div class="av-slot"><span class="av-val">${s.n}</span></div>
-          <div class="av-fline av-fline-green"></div>
-          <div class="av-slot"><span class="av-val">${s.d}</span></div>
-        </div>`;
-    }
-    stage.appendChild(final);
-    stage.scrollTop = stage.scrollHeight;
-    document.getElementById('btn-hint-ok').classList.add('visible');
-  });
+function hFinal(answer, delayS) {
+  const s = simplify(answer.n, answer.d);
+  const inner = s.d === 1
+    ? `<span class="av-whole-result">${s.n}</span>`
+    : `<div class="av-frac av-frac-final">
+        <div class="av-slot"><span class="av-val">${s.n}</span></div>
+        <div class="av-fline av-fline-green"></div>
+        <div class="av-slot"><span class="av-val">${s.d}</span></div>
+      </div>`;
+  return `<div class="av-final-row" style="opacity:0;animation:gentleRise 0.7s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">
+    <span class="av-eq-sym">=</span>${inner}</div>`;
 }
 
 function playAnimation(problem, answer) {
@@ -321,187 +312,107 @@ function playAnimation(problem, answer) {
 }
 
 function animMultiply(stage, a, b, answer) {
-  const probRow = document.createElement('div');
-  probRow.className = 'av-prob-row';
-  probRow.innerHTML =
-    makeAVFrac(a.n, a.d, 'ma') +
-    `<span class="av-op-sym">×</span>` +
-    makeAVFrac(b.n, b.d, 'mb');
-  stage.appendChild(probRow);
-
-  let t = 700;
-
-  at(t, () => { avHighlight('man', 'hl-n'); avHighlight('mbn', 'hl-n'); });
-  addCalcRow(stage, `<span class="hl-n">${a.n} × ${b.n}</span> = <strong>${a.n * b.n}</strong> <span class="av-tag">числители</span>`, t + 400);
-  t += 1200;
-
-  at(t, () => { avHighlight('mad', 'hl-d'); avHighlight('mbd', 'hl-d'); });
-  addCalcRow(stage, `<span class="hl-d">${a.d} × ${b.d}</span> = <strong>${a.d * b.d}</strong> <span class="av-tag">знаменатели</span>`, t + 400);
-  t += 1200;
-
   const rawN = a.n * b.n, rawD = a.d * b.d;
   const g = gcd(rawN, rawD);
 
-  at(t, () => {
-    const row = document.createElement('div');
-    row.className = 'av-res-row';
-    row.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'mr');
-    stage.appendChild(row);
-    stage.scrollTop = stage.scrollHeight;
-  });
-  t += 900;
+  const tProb = 0.1, tHlN = 0.5, tCalcN = 0.9, tHlD = 1.7, tCalcD = 2.1, tRes = 2.9;
+  const tCalcG = 3.7, tStrike = 4.5, tFinal = g > 1 ? 5.7 : 3.7;
 
-  if (g > 1) {
-    addCalcRow(stage, `НОД(${rawN}, ${rawD}) = <strong>${g}</strong> — сокращаем`, t);
-    t += 1000;
-    at(t, () => { avStrike('mrn'); avStrike('mrd'); });
-    t += 700;
-    at(t, () => { avReplace('mrn', answer.n); avReplace('mrd', answer.d); });
-    t += 900;
-  }
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(a.n, a.d, '', {hlAnim:`hlNum 0.4s ease ${tHlN}s both`}, {hlAnim:`hlDen 0.4s ease ${tHlD}s both`})}
+    <span class="av-op-sym">×</span>
+    ${hFrac(b.n, b.d, '', {hlAnim:`hlNum 0.4s ease ${tHlN}s both`}, {hlAnim:`hlDen 0.4s ease ${tHlD}s both`})}
+  </div>`;
+  const calcNRow = hCalc(`<span class="hl-n">${a.n} × ${b.n}</span> = <strong>${rawN}</strong> <span class="av-tag">числители</span>`, tCalcN);
+  const calcDRow = hCalc(`<span class="hl-d">${a.d} × ${b.d}</span> = <strong>${rawD}</strong> <span class="av-tag">знаменатели</span>`, tCalcD);
+  const resRow = g > 1
+    ? hRes(hFrac(rawN, rawD, '', {strikeDelay: tStrike, newVal: answer.n}, {strikeDelay: tStrike, newVal: answer.d}), tRes)
+    : hRes(hFrac(rawN, rawD, '', null, null), tRes);
+  const calcGRow = g > 1 ? hCalc(`НОД(${rawN}, ${rawD}) = <strong>${g}</strong> — сокращаем`, tCalcG) : '';
 
-  showFinalResult(stage, answer, t + 300);
+  stage.innerHTML = probRow + calcNRow + calcDRow + resRow + calcGRow + hFinal(answer, tFinal);
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
 }
 
 function animDivide(stage, a, b, answer) {
-  const probRow = document.createElement('div');
-  probRow.className = 'av-prob-row';
-  probRow.innerHTML =
-    makeAVFrac(a.n, a.d, 'da') +
-    `<span class="av-op-sym" id="av-div-op">÷</span>` +
-    `<div class="av-flip-wrap" id="av-flip">` + makeAVFrac(b.n, b.d, 'db') + `</div>`;
-  stage.appendChild(probRow);
-
-  let t = 700;
-  addCalcRow(stage, 'Переворачиваем вторую дробь', t);
-  t += 1000;
-
-  at(t, () => {
-    const wrap = document.getElementById('av-flip');
-    if (wrap) wrap.classList.add('flipping');
-    setTimeout(() => {
-      const bn = document.querySelector('#dbn .av-val');
-      const bd = document.querySelector('#dbd .av-val');
-      if (bn) bn.textContent = b.d;
-      if (bd) bd.textContent = b.n;
-      const op = document.getElementById('av-div-op');
-      if (op) { op.textContent = '×'; op.classList.add('op-switched'); }
-    }, 350);
-  });
-  t += 1000;
-
-  at(t, () => { avHighlight('dan', 'hl-n'); avHighlight('dbn', 'hl-n'); });
-  addCalcRow(stage, `<span class="hl-n">${a.n} × ${b.d}</span> = <strong>${a.n * b.d}</strong> <span class="av-tag">числители</span>`, t + 400);
-  t += 1200;
-
-  at(t, () => { avHighlight('dad', 'hl-d'); avHighlight('dbd', 'hl-d'); });
-  addCalcRow(stage, `<span class="hl-d">${a.d} × ${b.n}</span> = <strong>${a.d * b.n}</strong> <span class="av-tag">знаменатели</span>`, t + 400);
-  t += 1200;
-
   const rawN = a.n * b.d, rawD = a.d * b.n;
   const g = gcd(rawN, rawD);
 
-  at(t, () => {
-    const row = document.createElement('div');
-    row.className = 'av-res-row';
-    row.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'dr');
-    stage.appendChild(row);
-    stage.scrollTop = stage.scrollHeight;
-  });
-  t += 900;
+  const tProb = 0.1, tCalcFlip = 0.5, tFlipped = 1.3, tHlN = 1.7, tCalcN = 2.1;
+  const tHlD = 2.9, tCalcD = 3.3, tRes = 4.1, tCalcG = 4.9, tStrike = 5.7;
+  const tFinal = g > 1 ? 6.9 : 4.9;
 
-  if (g > 1) {
-    addCalcRow(stage, `НОД(${rawN}, ${rawD}) = <strong>${g}</strong> — сокращаем`, t);
-    t += 1000;
-    at(t, () => { avStrike('drn'); avStrike('drd'); });
-    t += 700;
-    at(t, () => { avReplace('drn', answer.n); avReplace('drd', answer.d); });
-    t += 900;
-  }
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(a.n, a.d, '', null, null)}
+    <span class="av-op-sym">÷</span>
+    ${hFrac(b.n, b.d, '', null, null)}
+  </div>`;
+  const calcFlipRow = hCalc('Переворачиваем вторую дробь', tCalcFlip);
+  const flippedRow = `<div class="av-calc-row" style="opacity:0;animation:gentleRise 0.55s ease ${tFlipped}s both">
+    <div class="av-prob-row">
+      ${hFrac(a.n, a.d, '', {hlAnim:`hlNum 0.4s ease ${tHlN}s both`}, {hlAnim:`hlDen 0.4s ease ${tHlD}s both`})}
+      <span class="av-op-sym">×</span>
+      ${hFrac(b.d, b.n, '', {hlAnim:`hlNum 0.4s ease ${tHlN}s both`}, {hlAnim:`hlDen 0.4s ease ${tHlD}s both`})}
+    </div>
+  </div>`;
+  const calcNRow = hCalc(`<span class="hl-n">${a.n} × ${b.d}</span> = <strong>${rawN}</strong> <span class="av-tag">числители</span>`, tCalcN);
+  const calcDRow = hCalc(`<span class="hl-d">${a.d} × ${b.n}</span> = <strong>${rawD}</strong> <span class="av-tag">знаменатели</span>`, tCalcD);
+  const resRow = g > 1
+    ? hRes(hFrac(rawN, rawD, '', {strikeDelay: tStrike, newVal: answer.n}, {strikeDelay: tStrike, newVal: answer.d}), tRes)
+    : hRes(hFrac(rawN, rawD, '', null, null), tRes);
+  const calcGRow = g > 1 ? hCalc(`НОД(${rawN}, ${rawD}) = <strong>${g}</strong> — сокращаем`, tCalcG) : '';
 
-  showFinalResult(stage, answer, t + 300);
+  stage.innerHTML = probRow + calcFlipRow + flippedRow + calcNRow + calcDRow + resRow + calcGRow + hFinal(answer, tFinal);
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
 }
 
 function animAdd(stage, a, b, answer) {
-  const probRow = document.createElement('div');
-  probRow.className = 'av-prob-row';
-  probRow.innerHTML =
-    makeAVFrac(a.n, a.d, 'aa') +
-    `<span class="av-op-sym">+</span>` +
-    makeAVFrac(b.n, b.d, 'ab');
-  stage.appendChild(probRow);
-
   const l = lcm(a.d, b.d);
   const an = a.n * (l / a.d);
   const bn = b.n * (l / b.d);
-
-  let t = 700;
-  addCalcRow(stage, `НОК(${a.d}, ${b.d}) = <strong>${l}</strong>`, t);
-  t += 1100;
-
-  at(t, () => { avStrike('aad'); avStrike('abd'); });
-  t += 700;
-  at(t, () => { avReplace('aad', l); avReplace('abd', l); });
-  t += 900;
-
-  at(t, () => { avStrike('aan'); avStrike('abn'); });
-  t += 700;
-  at(t, () => { avReplace('aan', an); avReplace('abn', bn); });
-  t += 1000;
-
-  addCalcRow(stage, `<span class="hl-n">${an}</span> + <span class="hl-n">${bn}</span> = <strong>${an + bn}</strong>`, t);
-  t += 1100;
-
   const rawN = an + bn;
   const g = gcd(rawN, l);
 
-  at(t, () => {
-    const row = document.createElement('div');
-    row.className = 'av-res-row';
-    row.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, l, 'ar');
-    stage.appendChild(row);
-    stage.scrollTop = stage.scrollHeight;
-  });
-  t += 900;
+  const tProb = 0.1, tCalcLCM = 0.5, tNewProb = 1.4, tCalcSum = 2.6, tRes = 3.5;
+  const tCalcG = 4.3, tStrike = 5.1, tFinal = g > 1 ? 6.3 : 4.3;
 
-  if (g > 1) {
-    addCalcRow(stage, `НОД(${rawN}, ${l}) = <strong>${g}</strong> — сокращаем`, t);
-    t += 1000;
-    at(t, () => { avStrike('arn'); avStrike('ard'); });
-    t += 700;
-    at(t, () => { avReplace('arn', answer.n); avReplace('ard', answer.d); });
-    t += 900;
-  }
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(a.n, a.d, '', null, null)}
+    <span class="av-op-sym">+</span>
+    ${hFrac(b.n, b.d, '', null, null)}
+  </div>`;
+  const calcLCMRow = hCalc(`НОК(${a.d}, ${b.d}) = <strong>${l}</strong>`, tCalcLCM);
+  const newProbRow = `<div class="av-calc-row" style="opacity:0;animation:gentleRise 0.55s ease ${tNewProb}s both">
+    <div class="av-prob-row">
+      ${hFrac(an, l, '', {hlAnim:`hlNum 0.4s ease ${tNewProb+0.3}s both`}, null)}
+      <span class="av-op-sym">+</span>
+      ${hFrac(bn, l, '', {hlAnim:`hlNum 0.4s ease ${tNewProb+0.3}s both`}, null)}
+    </div>
+  </div>`;
+  const calcSumRow = hCalc(`<span class="hl-n">${an} + ${bn}</span> = <strong>${rawN}</strong>`, tCalcSum);
+  const resRow = g > 1
+    ? hRes(hFrac(rawN, l, '', {strikeDelay: tStrike, newVal: answer.n}, {strikeDelay: tStrike, newVal: answer.d}), tRes)
+    : hRes(hFrac(rawN, l, '', null, null), tRes);
+  const calcGRow = g > 1 ? hCalc(`НОД(${rawN}, ${l}) = <strong>${g}</strong> — сокращаем`, tCalcG) : '';
 
-  showFinalResult(stage, answer, t + 300);
+  stage.innerHTML = probRow + calcLCMRow + newProbRow + calcSumRow + resRow + calcGRow + hFinal(answer, tFinal);
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
 }
 
 function animSimplify(stage, f, answer) {
-  const probRow = document.createElement('div');
-  probRow.className = 'av-prob-row';
-  probRow.innerHTML = makeAVFrac(f.n, f.d, 'sa');
-  stage.appendChild(probRow);
-
   const g = gcd(f.n, f.d);
-  let t = 700;
 
-  addCalcRow(stage, `НОД(${f.n}, ${f.d}) = <strong>${g}</strong>`, t);
-  t += 1100;
+  const tProb = 0.1, tCalcG = 0.5, tCalcN = 1.3, tCalcD = 2.1, tStrike = 2.9, tFinal = 4.1;
 
-  at(t, () => { avHighlight('san', 'hl-n'); });
-  addCalcRow(stage, `<span class="hl-n">${f.n}</span> ÷ ${g} = <strong>${answer.n}</strong>`, t + 350);
-  t += 1000;
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(f.n, f.d, '', {strikeDelay: tStrike, newVal: answer.n}, {strikeDelay: tStrike, newVal: answer.d})}
+  </div>`;
+  const calcGRow = hCalc(`НОД(${f.n}, ${f.d}) = <strong>${g}</strong>`, tCalcG);
+  const calcNRow = hCalc(`<span class="hl-n">${f.n}</span> ÷ ${g} = <strong>${answer.n}</strong> <span class="av-tag">числитель</span>`, tCalcN);
+  const calcDRow = hCalc(`<span class="hl-d">${f.d}</span> ÷ ${g} = <strong>${answer.d}</strong> <span class="av-tag">знаменатель</span>`, tCalcD);
 
-  at(t, () => { avHighlight('sad', 'hl-d'); });
-  addCalcRow(stage, `<span class="hl-d">${f.d}</span> ÷ ${g} = <strong>${answer.d}</strong>`, t + 350);
-  t += 1000;
-
-  at(t, () => { avStrike('san'); avStrike('sad'); });
-  t += 700;
-  at(t, () => { avReplace('san', answer.n); avReplace('sad', answer.d); });
-  t += 900;
-
-  showFinalResult(stage, answer, t + 300);
+  stage.innerHTML = probRow + calcGRow + calcNRow + calcDRow + hFinal(answer, tFinal);
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
 }
 
 // ── Sounds (Web Audio API) ────────────────────────
