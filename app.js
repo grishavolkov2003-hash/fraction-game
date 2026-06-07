@@ -51,9 +51,12 @@ function shuffle(arr) {
 
 // ── Level Config ──────────────────────────────────
 const LEVELS = {
-  easy: { min: 2, max: 19 },
-  hard: { min: 5, max: 99 },
+  beginner: { min: 2, max: 5 },
+  easy:     { min: 2, max: 9 },
+  hard:     { min: 5, max: 30 },
 };
+
+const MAX_ANSWER = { beginner: 8, easy: 20, hard: 50 };
 
 const OPERATIONS = ['multiply', 'divide', 'add', 'simplify'];
 
@@ -67,7 +70,6 @@ function randomFrac(min, max) {
   return { n, d };
 }
 
-// Generate a fraction that can be simplified (has GCD > 1)
 function randomUnsimplifiedFrac(min, max) {
   let n, d, g;
   let attempts = 0;
@@ -79,10 +81,9 @@ function randomUnsimplifiedFrac(min, max) {
   } while ((g === 1 || n === d) && attempts < 50);
 
   if (g === 1) {
-    // force it — multiply both by a factor
-    const factor = randInt(2, 5);
-    n = randInt(2, Math.floor(max / factor));
-    d = randInt(2, Math.floor(max / factor));
+    const factor = randInt(2, Math.max(2, Math.floor(max / 3)));
+    n = randInt(2, Math.max(2, Math.floor(max / factor)));
+    d = randInt(2, Math.max(2, Math.floor(max / factor)));
     n *= factor;
     d *= factor;
     if (n === d) d += factor;
@@ -93,79 +94,243 @@ function randomUnsimplifiedFrac(min, max) {
 // ── Task Generator ────────────────────────────────
 function generateTask(operation, level) {
   const { min, max } = LEVELS[level];
+  const maxAns = MAX_ANSWER[level];
 
   let problem, answer;
+  let attempts = 0;
 
-  if (operation === 'multiply') {
-    const a = randomFrac(min, max);
-    const b = randomFrac(min, max);
-    const raw = { n: a.n * b.n, d: a.d * b.d };
-    answer = simplify(raw.n, raw.d);
-    problem = { type: 'binary', op: '×', left: a, right: b };
-  }
-  else if (operation === 'divide') {
-    const a = randomFrac(min, max);
-    const b = randomFrac(min, max);
-    const raw = { n: a.n * b.d, d: a.d * b.n };
-    answer = simplify(raw.n, raw.d);
-    problem = { type: 'binary', op: '÷', left: a, right: b };
-  }
-  else if (operation === 'add') {
-    const a = randomFrac(min, max);
-    const b = randomFrac(min, max);
-    const l = lcm(a.d, b.d);
-    const raw = { n: a.n * (l / a.d) + b.n * (l / b.d), d: l };
-    answer = simplify(raw.n, raw.d);
-    problem = { type: 'binary', op: '+', left: a, right: b };
-  }
-  else if (operation === 'simplify') {
-    const f = randomUnsimplifiedFrac(min, max);
-    answer = simplify(f.n, f.d);
-    problem = { type: 'single', label: 'Сократи дробь', frac: f };
-  }
+  do {
+    attempts++;
+    if (operation === 'multiply') {
+      const a = randomFrac(min, max);
+      const b = randomFrac(min, max);
+      const raw = { n: a.n * b.n, d: a.d * b.d };
+      answer = simplify(raw.n, raw.d);
+      problem = { type: 'binary', op: '×', left: a, right: b };
+    }
+    else if (operation === 'divide') {
+      const a = randomFrac(min, max);
+      const b = randomFrac(min, max);
+      const raw = { n: a.n * b.d, d: a.d * b.n };
+      answer = simplify(raw.n, raw.d);
+      problem = { type: 'binary', op: '÷', left: a, right: b };
+    }
+    else if (operation === 'add') {
+      const a = randomFrac(min, max);
+      const b = randomFrac(min, max);
+      const l = lcm(a.d, b.d);
+      const raw = { n: a.n * (l / a.d) + b.n * (l / b.d), d: l };
+      answer = simplify(raw.n, raw.d);
+      problem = { type: 'binary', op: '+', left: a, right: b };
+    }
+    else if (operation === 'simplify') {
+      const f = randomUnsimplifiedFrac(min, max);
+      answer = simplify(f.n, f.d);
+      problem = { type: 'single', label: 'Сократи дробь', frac: f };
+    }
+  } while (
+    attempts < 20 &&
+    operation !== 'simplify' &&
+    (answer.n > maxAns || answer.d > maxAns)
+  );
 
-  const choices = generateChoices(answer, operation);
+  const choices = generateChoices(answer, operation, problem);
   return { problem, answer, choices };
 }
 
 // ── Wrong Answer Generator ────────────────────────
-function generateChoices(correct, operation) {
+function generateChoices(correct, operation, problem) {
   const seen = new Set([fracToStr(correct)]);
   const wrongs = [];
 
-  const candidates = [
-    { n: correct.n + 1, d: correct.d },
-    { n: correct.n - 1, d: correct.d },
-    { n: correct.n, d: correct.d + 1 },
-    { n: correct.n, d: correct.d - 1 },
-    { n: correct.d, d: correct.n },          // flipped
-    { n: correct.n + 2, d: correct.d },
-    { n: correct.n, d: correct.d + 2 },
-    { n: correct.n * 2, d: correct.d * 2 },  // unsimplified
-    { n: correct.n + 1, d: correct.d + 1 },
-    { n: correct.n - 1, d: correct.d + 1 },
-  ];
+  // School-mistake candidates based on operation
+  let smartCandidates = [];
 
-  for (const c of candidates) {
-    if (wrongs.length >= 3) break;
-    if (c.n <= 0 || c.d <= 0) continue;
-    const key = fracToStr(simplify(c.n, c.d));
-    if (seen.has(key)) continue;
-    seen.add(key);
-    wrongs.push(c);
+  if (operation === 'multiply' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n + b.n, a.d + b.d),          // добавил вместо умножил
+      simplify(a.n * b.n, a.d + b.d),           // числители умножил, знам сложил
+      simplify(a.n + b.n, a.d * b.d),           // числители сложил, знам умножил
+      simplify(a.n * b.d, a.d * b.n),           // перепутал порядок
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'divide' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n * b.n, a.d * b.d),           // умножил вместо деления
+      simplify(a.n * b.d, a.d * b.n),           // перевернул не ту дробь
+      simplify(a.d * b.d, a.n * b.n),           // оба перевернул
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'add' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n + b.n, a.d + b.d),           // классика: сложил знам
+      simplify(a.n * b.d + b.n, a.d * b.d),     // только один привёл
+      simplify(a.n + b.n * (a.d / gcd(a.d, b.d)), lcm(a.d, b.d)), // ошибка в приведении
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'simplify' && problem?.frac) {
+    const f = problem.frac;
+    const g = gcd(f.n, f.d);
+    smartCandidates = [
+      { n: f.n / gcd(f.n, f.d) + 1, d: f.d / gcd(f.n, f.d) },  // чуть мимо
+      { n: f.n, d: f.d },                                          // вообще не сократил
+      simplify(f.n, f.d + g),                                       // частично сократил
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else {
+    smartCandidates = [
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n - 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+      { n: correct.n, d: correct.d - 1 },
+      { n: correct.d, d: correct.n },
+      { n: correct.n + 2, d: correct.d },
+    ];
   }
 
-  // fill remaining with random fracs if needed
+  for (const c of smartCandidates) {
+    if (wrongs.length >= 3) break;
+    if (!c || c.n <= 0 || c.d <= 0 || isNaN(c.n) || isNaN(c.d)) continue;
+    const s = simplify(Math.round(c.n), Math.round(c.d));
+    if (s.n <= 0 || s.d <= 0) continue;
+    const key = fracToStr(s);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    wrongs.push(s);
+  }
+
+  // fallback random
   while (wrongs.length < 3) {
-    const r = { n: randInt(1, 20), d: randInt(1, 20) };
+    const r = { n: randInt(1, 15), d: randInt(2, 15) };
     const key = fracToStr(simplify(r.n, r.d));
-    if (!seen.has(key) && r.d !== 0) {
+    if (!seen.has(key)) {
       seen.add(key);
       wrongs.push(r);
     }
   }
 
   return shuffle([correct, ...wrongs]);
+}
+
+// ── Hint Builder ──────────────────────────────────
+function buildHint(problem, answer) {
+  const steps = [];
+
+  if (problem.type === 'binary') {
+    const { left: a, right: b, op } = problem;
+
+    if (op === '×') {
+      steps.push(`${a.n} × ${b.n} = ${a.n * b.n} (числители)`);
+      steps.push(`${a.d} × ${b.d} = ${a.d * b.d} (знаменатели)`);
+      const raw = simplify(a.n * b.n, a.d * b.d);
+      const g = gcd(a.n * b.n, a.d * b.d);
+      if (g > 1) steps.push(`Сокращаем на ${g}: ${raw.n}/${raw.d}`);
+
+    } else if (op === '÷') {
+      steps.push(`Переворачиваем ${b.n}/${b.d} → ${b.d}/${b.n}`);
+      steps.push(`${a.n} × ${b.d} = ${a.n * b.d}`);
+      steps.push(`${a.d} × ${b.n} = ${a.d * b.n}`);
+      const g = gcd(a.n * b.d, a.d * b.n);
+      if (g > 1) steps.push(`Сокращаем на ${g}`);
+
+    } else if (op === '+') {
+      const l = lcm(a.d, b.d);
+      steps.push(`НОК(${a.d}, ${b.d}) = ${l}`);
+      const an = a.n * (l / a.d);
+      const bn = b.n * (l / b.d);
+      steps.push(`${a.n}/${a.d} = ${an}/${l}`);
+      steps.push(`${b.n}/${b.d} = ${bn}/${l}`);
+      steps.push(`${an} + ${bn} = ${an + bn}`);
+      const g = gcd(an + bn, l);
+      if (g > 1) steps.push(`Сокращаем на ${g}`);
+    }
+  } else {
+    const f = problem.frac;
+    const g = gcd(f.n, f.d);
+    steps.push(`НОД(${f.n}, ${f.d}) = ${g}`);
+    steps.push(`${f.n} ÷ ${g} = ${f.n / g}`);
+    steps.push(`${f.d} ÷ ${g} = ${f.d / g}`);
+  }
+
+  return steps;
+}
+
+// ── Sounds (Web Audio API) ────────────────────────
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playSound(type) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'correct') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } else if (type === 'wrong') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, ctx.currentTime);
+      osc.frequency.setValueAtTime(180, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.25);
+    } else if (type === 'timeout') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.setValueAtTime(200, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'win') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.setValueAtTime(550, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    }
+  } catch(e) {}
+}
+
+// ── Record (localStorage) ─────────────────────────
+function getRecordKey() {
+  return `frac_record_${state.level}_${state.operation}`;
+}
+
+function getRecord() {
+  return parseInt(localStorage.getItem(getRecordKey()) || '0');
+}
+
+function saveRecord(score) {
+  const prev = getRecord();
+  if (score > prev) {
+    localStorage.setItem(getRecordKey(), score);
+    return { isNew: true, value: score };
+  }
+  return { isNew: false, value: prev };
 }
 
 // ── Render Helpers ────────────────────────────────
@@ -196,12 +361,10 @@ function renderProblem(problem) {
 
   if (problem.type === 'binary') {
     wrap.appendChild(makeFracEl(problem.left));
-
     const op = document.createElement('span');
     op.className = 'op-symbol';
     op.textContent = problem.op;
     wrap.appendChild(op);
-
     wrap.appendChild(makeFracEl(problem.right));
   } else {
     const lbl = document.createElement('div');
@@ -211,34 +374,9 @@ function renderProblem(problem) {
     wrap.appendChild(makeFracEl(problem.frac));
   }
 
-  // re-trigger animation
   wrap.style.animation = 'none';
-  wrap.offsetHeight; // reflow
+  wrap.offsetHeight;
   wrap.style.animation = '';
-}
-
-function renderChoices(choices, correct, onAnswer) {
-  const grid = document.getElementById('choices-grid');
-  grid.innerHTML = '';
-
-  choices.forEach((frac, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-
-    // check if answer is a whole number (denominator = 1)
-    const s = simplify(frac.n, frac.d);
-    if (s.d === 1) {
-      const span = document.createElement('span');
-      span.className = 'whole-num';
-      span.textContent = s.n;
-      btn.appendChild(span);
-    } else {
-      btn.appendChild(makeFracEl(frac));
-    }
-
-    btn.addEventListener('click', () => onAnswer(frac, btn, correct), { once: true });
-    grid.appendChild(btn);
-  });
 }
 
 // ── Game State ────────────────────────────────────
@@ -266,7 +404,7 @@ function startTimer(onExpire) {
   bar.style.transition = 'none';
   bar.style.width = '100%';
   bar.classList.remove('urgent');
-  bar.offsetHeight; // reflow
+  bar.offsetHeight;
 
   state.timerStart = Date.now();
   state.answered = false;
@@ -277,9 +415,7 @@ function startTimer(onExpire) {
   state.timerInterval = setInterval(() => {
     const elapsed = Date.now() - state.timerStart;
     const remaining = state.timerDuration - elapsed;
-
     if (remaining <= 5000) bar.classList.add('urgent');
-
     if (remaining <= 0) {
       clearInterval(state.timerInterval);
       if (!state.answered) {
@@ -307,6 +443,41 @@ function addScore(base, bonus) {
   document.getElementById('score-display').textContent = `${state.score} очков`;
 }
 
+// ── Hint Popup ────────────────────────────────────
+function showHint(problem, answer) {
+  const steps = buildHint(problem, answer);
+  const stepsEl = document.getElementById('hint-steps');
+  stepsEl.innerHTML = '';
+
+  // show correct answer
+  const answerEl = document.createElement('div');
+  answerEl.className = 'hint-answer';
+  const s = simplify(answer.n, answer.d);
+  if (s.d === 1) {
+    answerEl.textContent = `Ответ: ${s.n}`;
+  } else {
+    answerEl.innerHTML = `Ответ: `;
+    const fracWrap = document.createElement('span');
+    fracWrap.className = 'hint-frac';
+    fracWrap.innerHTML = `<span>${s.n}</span><span>${s.d}</span>`;
+    answerEl.appendChild(fracWrap);
+  }
+  stepsEl.appendChild(answerEl);
+
+  steps.forEach((step, i) => {
+    const el = document.createElement('div');
+    el.className = 'hint-step';
+    el.textContent = `${i + 1}. ${step}`;
+    stepsEl.appendChild(el);
+  });
+
+  document.getElementById('hint-overlay').classList.add('active');
+}
+
+function hideHint() {
+  document.getElementById('hint-overlay').classList.remove('active');
+}
+
 // ── Answer Handler ────────────────────────────────
 function handleAnswer(chosen, btn, correct) {
   if (state.answered) return;
@@ -316,36 +487,39 @@ function handleAnswer(chosen, btn, correct) {
   const isCorrect = fracEqual(chosen, correct);
   const overlay = document.getElementById('feedback-overlay');
 
+  // disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
   if (isCorrect) {
     btn.classList.add('correct');
-    btn.classList.add('pop');
     overlay.className = 'feedback-overlay show-correct';
     state.correct++;
     state.combo++;
     if (state.combo > state.maxCombo) state.maxCombo = state.combo;
     const bonus = getTimeBonus();
     addScore(10, bonus);
+    playSound('correct');
+
+    setTimeout(() => {
+      overlay.className = 'feedback-overlay';
+      nextQuestion();
+    }, 700);
   } else {
     btn.classList.add('wrong');
     overlay.className = 'feedback-overlay show-wrong';
     state.combo = 0;
-    // reveal correct answer
-    revealCorrect(correct);
+    playSound('wrong');
+
+    // reveal correct
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b._fracData && fracEqual(b._fracData, correct)) b.classList.add('reveal');
+    });
+
+    setTimeout(() => {
+      overlay.className = 'feedback-overlay';
+      showHint(state.currentTask.problem, correct);
+    }, 700);
   }
-
-  setTimeout(() => {
-    overlay.className = 'feedback-overlay';
-    nextQuestion();
-  }, 900);
-}
-
-function revealCorrect(correct) {
-  const btns = document.querySelectorAll('.choice-btn');
-  btns.forEach(btn => {
-    const frac = btn._fracData;
-    if (!frac) return;
-    if (fracEqual(frac, correct)) btn.classList.add('reveal');
-  });
 }
 
 // ── Question Flow ─────────────────────────────────
@@ -354,21 +528,20 @@ function loadQuestion() {
   const task = generateTask(op, state.level);
   state.currentTask = task;
 
-  // update header
   document.getElementById('q-counter').textContent = `${state.currentQ + 1} / ${state.totalQ}`;
-  const pct = ((state.currentQ) / state.totalQ) * 100;
+  const pct = (state.currentQ / state.totalQ) * 100;
   document.getElementById('progress-bar').style.width = `${pct}%`;
 
   renderProblem(task.problem);
 
-  // render choices and store frac data on buttons
   const grid = document.getElementById('choices-grid');
   grid.innerHTML = '';
+
   task.choices.forEach((frac, i) => {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
     btn._fracData = frac;
-    btn.style.animationDelay = `${i * 0.04}s`;
+    btn.style.animationDelay = `${i * 0.05}s`;
 
     const s = simplify(frac.n, frac.d);
     if (s.d === 1) {
@@ -385,15 +558,20 @@ function loadQuestion() {
   });
 
   startTimer(() => {
-    // time's up
     state.combo = 0;
+    playSound('timeout');
     const overlay = document.getElementById('feedback-overlay');
     overlay.className = 'feedback-overlay show-wrong';
-    revealCorrect(task.answer);
+
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      b.disabled = true;
+      if (b._fracData && fracEqual(b._fracData, task.answer)) b.classList.add('reveal');
+    });
+
     setTimeout(() => {
       overlay.className = 'feedback-overlay';
-      nextQuestion();
-    }, 900);
+      showHint(task.problem, task.answer);
+    }, 700);
   });
 }
 
@@ -409,13 +587,11 @@ function nextQuestion() {
 // ── Build ops array ───────────────────────────────
 function buildOps() {
   if (state.operation === 'all') {
-    // mix: 3 each of multiply/divide/add, 1 simplify repeated
     const pool = [];
     OPERATIONS.forEach(op => {
       const count = op === 'simplify' ? 1 : 3;
       for (let i = 0; i < count; i++) pool.push(op);
     });
-    // pad to totalQ
     while (pool.length < state.totalQ) pool.push(OPERATIONS[pool.length % OPERATIONS.length]);
     state.ops = shuffle(pool.slice(0, state.totalQ));
   } else {
@@ -454,11 +630,25 @@ function showResults() {
   document.getElementById('stat-correct').textContent = `${state.correct}/${state.totalQ}`;
   document.getElementById('stat-combo').textContent = state.maxCombo;
 
+  const record = saveRecord(state.score);
+  const recordEl = document.getElementById('record-display');
+  if (record.isNew && state.score > 0) {
+    recordEl.textContent = '🎯 Новый рекорд!';
+    recordEl.className = 'record-display new-record';
+    playSound('win');
+  } else if (record.value > 0) {
+    recordEl.textContent = `Рекорд: ${record.value}`;
+    recordEl.className = 'record-display';
+  } else {
+    recordEl.textContent = '';
+  }
+
   if (tg?.BackButton) tg.BackButton.hide();
 }
 
 function showHome() {
   stopTimer();
+  hideHint();
   showScreen('screen-home');
   if (tg?.BackButton) tg.BackButton.hide();
 }
@@ -483,4 +673,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-start').addEventListener('click', startGame);
   document.getElementById('btn-restart').addEventListener('click', startGame);
   document.getElementById('btn-home').addEventListener('click', showHome);
+  document.getElementById('btn-hint-ok').addEventListener('click', () => {
+    hideHint();
+    nextQuestion();
+  });
 });

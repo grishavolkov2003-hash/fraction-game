@@ -26,6 +26,7 @@
 
       <div class="section-label">Сложность</div>
       <div class="btn-group" id="level-group">
+        <button class="toggle-btn" data-value="beginner">Начало</button>
         <button class="toggle-btn active" data-value="easy">Лёгкий</button>
         <button class="toggle-btn" data-value="hard">Сложный</button>
       </div>
@@ -75,6 +76,7 @@
       <div class="result-emoji" id="result-emoji">🎉</div>
       <div class="result-score" id="result-score">0</div>
       <div class="result-label">очков</div>
+      <div class="record-display" id="record-display"></div>
       <div class="result-stats">
         <div class="stat-item">
           <div class="stat-val" id="stat-correct">0</div>
@@ -92,6 +94,15 @@
 
   <!-- FEEDBACK OVERLAY -->
   <div class="feedback-overlay" id="feedback-overlay"></div>
+
+  <!-- HINT OVERLAY -->
+  <div class="hint-overlay" id="hint-overlay">
+    <div class="hint-card">
+      <div class="hint-title">Разбор задачи</div>
+      <div class="hint-steps" id="hint-steps"></div>
+      <button class="btn-hint-ok" id="btn-hint-ok">Понятно</button>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
