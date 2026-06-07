@@ -329,15 +329,15 @@ function animMultiply(stage, a, b, answer) {
     makeAVFrac(b.n, b.d, 'mb');
   stage.appendChild(probRow);
 
-  let t = 350;
+  let t = 700;
 
   at(t, () => { avHighlight('man', 'hl-n'); avHighlight('mbn', 'hl-n'); });
-  addCalcRow(stage, `<span class="hl-n">${a.n} × ${b.n}</span> = <strong>${a.n * b.n}</strong> <span class="av-tag">числители</span>`, t + 200);
-  t += 800;
+  addCalcRow(stage, `<span class="hl-n">${a.n} × ${b.n}</span> = <strong>${a.n * b.n}</strong> <span class="av-tag">числители</span>`, t + 400);
+  t += 1200;
 
   at(t, () => { avHighlight('mad', 'hl-d'); avHighlight('mbd', 'hl-d'); });
-  addCalcRow(stage, `<span class="hl-d">${a.d} × ${b.d}</span> = <strong>${a.d * b.d}</strong> <span class="av-tag">знаменатели</span>`, t + 200);
-  t += 800;
+  addCalcRow(stage, `<span class="hl-d">${a.d} × ${b.d}</span> = <strong>${a.d * b.d}</strong> <span class="av-tag">знаменатели</span>`, t + 400);
+  t += 1200;
 
   const rawN = a.n * b.n, rawD = a.d * b.d;
   const g = gcd(rawN, rawD);
@@ -348,18 +348,18 @@ function animMultiply(stage, a, b, answer) {
   resRow.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'mr');
   stage.appendChild(resRow);
   at(t, () => { document.getElementById('av-res')?.classList.remove('av-hidden'); stage.scrollTop = stage.scrollHeight; });
-  t += 600;
+  t += 900;
 
   if (g > 1) {
     addCalcRow(stage, `НОД(${rawN}, ${rawD}) = <strong>${g}</strong> — сокращаем`, t);
-    t += 700;
+    t += 1000;
     at(t, () => { avStrike('mrn'); avStrike('mrd'); });
-    t += 500;
+    t += 700;
     at(t, () => { avReplace('mrn', answer.n); avReplace('mrd', answer.d); });
-    t += 600;
+    t += 900;
   }
 
-  showFinalResult(stage, answer, t + 200);
+  showFinalResult(stage, answer, t + 300);
 }
 
 function animDivide(stage, a, b, answer) {
@@ -371,9 +371,9 @@ function animDivide(stage, a, b, answer) {
     `<div class="av-flip-wrap" id="av-flip">` + makeAVFrac(b.n, b.d, 'db') + `</div>`;
   stage.appendChild(probRow);
 
-  let t = 400;
+  let t = 700;
   addCalcRow(stage, 'Переворачиваем вторую дробь', t);
-  t += 700;
+  t += 1000;
 
   at(t, () => {
     const wrap = document.getElementById('av-flip');
@@ -385,17 +385,17 @@ function animDivide(stage, a, b, answer) {
       if (bd) bd.textContent = b.n;
       const op = document.getElementById('av-div-op');
       if (op) { op.textContent = '×'; op.classList.add('op-switched'); }
-    }, 250);
+    }, 350);
   });
-  t += 700;
+  t += 1000;
 
   at(t, () => { avHighlight('dan', 'hl-n'); avHighlight('dbn', 'hl-n'); });
-  addCalcRow(stage, `<span class="hl-n">${a.n} × ${b.d}</span> = <strong>${a.n * b.d}</strong> <span class="av-tag">числители</span>`, t + 200);
-  t += 800;
+  addCalcRow(stage, `<span class="hl-n">${a.n} × ${b.d}</span> = <strong>${a.n * b.d}</strong> <span class="av-tag">числители</span>`, t + 400);
+  t += 1200;
 
   at(t, () => { avHighlight('dad', 'hl-d'); avHighlight('dbd', 'hl-d'); });
-  addCalcRow(stage, `<span class="hl-d">${a.d} × ${b.n}</span> = <strong>${a.d * b.n}</strong> <span class="av-tag">знаменатели</span>`, t + 200);
-  t += 800;
+  addCalcRow(stage, `<span class="hl-d">${a.d} × ${b.n}</span> = <strong>${a.d * b.n}</strong> <span class="av-tag">знаменатели</span>`, t + 400);
+  t += 1200;
 
   const rawN = a.n * b.d, rawD = a.d * b.n;
   const g = gcd(rawN, rawD);
@@ -406,18 +406,18 @@ function animDivide(stage, a, b, answer) {
   resRow.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, rawD, 'dr');
   stage.appendChild(resRow);
   at(t, () => { document.getElementById('av-res')?.classList.remove('av-hidden'); stage.scrollTop = stage.scrollHeight; });
-  t += 600;
+  t += 900;
 
   if (g > 1) {
     addCalcRow(stage, `НОД(${rawN}, ${rawD}) = <strong>${g}</strong> — сокращаем`, t);
-    t += 700;
+    t += 1000;
     at(t, () => { avStrike('drn'); avStrike('drd'); });
-    t += 500;
+    t += 700;
     at(t, () => { avReplace('drn', answer.n); avReplace('drd', answer.d); });
-    t += 600;
+    t += 900;
   }
 
-  showFinalResult(stage, answer, t + 200);
+  showFinalResult(stage, answer, t + 300);
 }
 
 function animAdd(stage, a, b, answer) {
@@ -433,22 +433,22 @@ function animAdd(stage, a, b, answer) {
   const an = a.n * (l / a.d);
   const bn = b.n * (l / b.d);
 
-  let t = 400;
+  let t = 700;
   addCalcRow(stage, `НОК(${a.d}, ${b.d}) = <strong>${l}</strong>`, t);
-  t += 800;
+  t += 1100;
 
   at(t, () => { avStrike('aad'); avStrike('abd'); });
-  t += 480;
+  t += 700;
   at(t, () => { avReplace('aad', l); avReplace('abd', l); });
-  t += 600;
+  t += 900;
 
   at(t, () => { avStrike('aan'); avStrike('abn'); });
-  t += 480;
-  at(t, () => { avReplace('aan', an); avReplace('abn', bn); });
   t += 700;
+  at(t, () => { avReplace('aan', an); avReplace('abn', bn); });
+  t += 1000;
 
   addCalcRow(stage, `<span class="hl-n">${an}</span> + <span class="hl-n">${bn}</span> = <strong>${an + bn}</strong>`, t);
-  t += 800;
+  t += 1100;
 
   const rawN = an + bn;
   const g = gcd(rawN, l);
@@ -459,18 +459,18 @@ function animAdd(stage, a, b, answer) {
   resRow.innerHTML = `<span class="av-eq-sym">=</span>` + makeAVFrac(rawN, l, 'ar');
   stage.appendChild(resRow);
   at(t, () => { document.getElementById('av-res')?.classList.remove('av-hidden'); stage.scrollTop = stage.scrollHeight; });
-  t += 600;
+  t += 900;
 
   if (g > 1) {
     addCalcRow(stage, `НОД(${rawN}, ${l}) = <strong>${g}</strong> — сокращаем`, t);
-    t += 700;
+    t += 1000;
     at(t, () => { avStrike('arn'); avStrike('ard'); });
-    t += 500;
+    t += 700;
     at(t, () => { avReplace('arn', answer.n); avReplace('ard', answer.d); });
-    t += 600;
+    t += 900;
   }
 
-  showFinalResult(stage, answer, t + 200);
+  showFinalResult(stage, answer, t + 300);
 }
 
 function animSimplify(stage, f, answer) {
@@ -480,25 +480,25 @@ function animSimplify(stage, f, answer) {
   stage.appendChild(probRow);
 
   const g = gcd(f.n, f.d);
-  let t = 400;
+  let t = 700;
 
   addCalcRow(stage, `НОД(${f.n}, ${f.d}) = <strong>${g}</strong>`, t);
-  t += 800;
+  t += 1100;
 
   at(t, () => { avHighlight('san', 'hl-n'); });
-  addCalcRow(stage, `<span class="hl-n">${f.n}</span> ÷ ${g} = <strong>${answer.n}</strong>`, t + 150);
-  t += 700;
+  addCalcRow(stage, `<span class="hl-n">${f.n}</span> ÷ ${g} = <strong>${answer.n}</strong>`, t + 350);
+  t += 1000;
 
   at(t, () => { avHighlight('sad', 'hl-d'); });
-  addCalcRow(stage, `<span class="hl-d">${f.d}</span> ÷ ${g} = <strong>${answer.d}</strong>`, t + 150);
-  t += 700;
+  addCalcRow(stage, `<span class="hl-d">${f.d}</span> ÷ ${g} = <strong>${answer.d}</strong>`, t + 350);
+  t += 1000;
 
   at(t, () => { avStrike('san'); avStrike('sad'); });
-  t += 480;
+  t += 700;
   at(t, () => { avReplace('san', answer.n); avReplace('sad', answer.d); });
-  t += 600;
+  t += 900;
 
-  showFinalResult(stage, answer, t + 200);
+  showFinalResult(stage, answer, t + 300);
 }
 
 // ── Sounds (Web Audio API) ────────────────────────
@@ -726,15 +726,14 @@ function handleAnswer(chosen, btn, correct) {
     state.combo = 0;
     playSound('wrong');
 
-    // reveal correct
     document.querySelectorAll('.choice-btn').forEach(b => {
       if (b._fracData && fracEqual(b._fracData, correct)) b.classList.add('reveal');
     });
 
     setTimeout(() => {
       overlay.className = 'feedback-overlay';
-      showHint(state.currentTask.problem, correct);
-    }, 700);
+      nextQuestion();
+    }, 1200);
   }
 }
 
@@ -790,8 +789,8 @@ function loadQuestion() {
 
     setTimeout(() => {
       overlay.className = 'feedback-overlay';
-      showHint(task.problem, task.answer);
-    }, 700);
+      nextQuestion();
+    }, 1200);
   });
 }
 
