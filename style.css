@@ -390,21 +390,23 @@ body {
 
 .choice-btn.correct .frac-num,
 .choice-btn.correct .frac-den,
-.choice-btn.correct .frac-line,
 .choice-btn.correct .whole-num,
 .choice-btn.correct .mixed-whole,
 .choice-btn.wrong .frac-num,
 .choice-btn.wrong .frac-den,
-.choice-btn.wrong .frac-line,
 .choice-btn.wrong .whole-num,
 .choice-btn.wrong .mixed-whole,
 .choice-btn.reveal .frac-num,
 .choice-btn.reveal .frac-den,
-.choice-btn.reveal .frac-line,
 .choice-btn.reveal .whole-num,
 .choice-btn.reveal .mixed-whole {
   color: var(--text);
-  background: transparent;
+}
+
+.choice-btn.correct .frac-line,
+.choice-btn.wrong .frac-line,
+.choice-btn.reveal .frac-line {
+  background: var(--text);
 }
 
 .choice-btn .fraction .frac-num,
