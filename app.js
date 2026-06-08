@@ -217,17 +217,34 @@ function generateChoices(correct, operation, problem) {
       { n: correct.n, d: correct.d + 1 },
     ];
   } else if (operation === 'mixed') {
-    // correct is {whole, n, d}
     const { whole, n: cn, d: cd } = correct;
-    return shuffle([
-      correct,
+    const mSeen = new Set([fracToStr(correct)]);
+    const choices = [correct];
+    const candidates = [
       { whole: whole + 1, n: cn, d: cd },
       { whole: Math.max(1, whole - 1), n: cn, d: cd },
       { whole, n: Math.min(cd - 1, cn + 1), d: cd },
-    ].filter((c, i, arr) =>
-      c.whole > 0 && c.n > 0 && c.n < c.d &&
-      arr.findIndex(x => fracToStr(x) === fracToStr(c)) === i
-    ).slice(0, 4));
+      { whole, n: Math.max(1, cn - 1), d: cd },
+      { whole: whole + 2, n: cn, d: cd },
+      { whole: whole + 1, n: Math.min(cd - 1, cn + 1), d: cd },
+    ];
+    for (const c of candidates) {
+      if (choices.length >= 4) break;
+      if (c.whole <= 0 || c.n <= 0 || c.n >= c.d) continue;
+      const key = fracToStr(c);
+      if (mSeen.has(key)) continue;
+      mSeen.add(key);
+      choices.push(c);
+    }
+    // fallback: just bump whole number
+    let off = 3;
+    while (choices.length < 4) {
+      const c = { whole: whole + off, n: cn, d: cd };
+      const key = fracToStr(c);
+      if (!mSeen.has(key)) { mSeen.add(key); choices.push(c); }
+      off++;
+    }
+    return shuffle(choices);
   } else if (operation === 'simplify' && problem?.frac) {
     const f = problem.frac;
     const g = gcd(f.n, f.d);

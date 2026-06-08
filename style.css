@@ -360,6 +360,34 @@ body {
   background: #F0FFF4;
 }
 
+[data-theme="dark"] .choice-btn.correct,
+[data-theme="dark"] .choice-btn.reveal {
+  background: #0D2E1A;
+}
+
+[data-theme="dark"] .choice-btn.wrong {
+  background: #2E0D0D;
+}
+
+.choice-btn.correct .frac-num,
+.choice-btn.correct .frac-den,
+.choice-btn.correct .frac-line,
+.choice-btn.correct .whole-num,
+.choice-btn.correct .mixed-whole,
+.choice-btn.wrong .frac-num,
+.choice-btn.wrong .frac-den,
+.choice-btn.wrong .frac-line,
+.choice-btn.wrong .whole-num,
+.choice-btn.wrong .mixed-whole,
+.choice-btn.reveal .frac-num,
+.choice-btn.reveal .frac-den,
+.choice-btn.reveal .frac-line,
+.choice-btn.reveal .whole-num,
+.choice-btn.reveal .mixed-whole {
+  color: var(--text);
+  background: transparent;
+}
+
 .choice-btn .fraction .frac-num,
 .choice-btn .fraction .frac-den {
   font-size: 28px;
