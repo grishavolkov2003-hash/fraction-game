@@ -223,6 +223,29 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+  gap: 8px;
+}
+
+.btn-exit-game {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  -webkit-appearance: none;
+}
+.btn-exit-game:active {
+  background: var(--accent-light);
+  color: var(--accent);
 }
 
 .progress-info span {

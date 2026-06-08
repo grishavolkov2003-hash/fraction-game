@@ -1003,6 +1003,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-start').addEventListener('click', startGame);
   document.getElementById('btn-restart').addEventListener('click', startGame);
   document.getElementById('btn-home').addEventListener('click', showHome);
+  document.getElementById('btn-exit-game').addEventListener('click', () => {
+    stopTimer();
+    hideHint();
+    showHome();
+  });
   document.getElementById('btn-hint-ok').addEventListener('click', () => {
     hideHint();
     nextQuestion();
