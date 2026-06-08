@@ -143,8 +143,9 @@ body {
   min-width: 0;
 }
 
-/* 7-я кнопка (Смешанные) — растянуть на оставшиеся 2 ячейки */
-#op-group .toggle-btn:nth-child(7) {
+/* Последние 2 кнопки (9-я и 10-я) растягиваем на 2 ячейки */
+#op-group .toggle-btn:nth-child(9),
+#op-group .toggle-btn:nth-child(10) {
   grid-column: span 2;
 }
 
@@ -469,6 +470,23 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ── COMPARE TASK ─────────────────────────────────── */
+.compare-sym {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 42px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.choices-grid--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ── EQUIVALENT FRACTIONS ─────────────────────────── */
+.frac-question {
+  color: var(--accent);
 }
 
 /* ── RESULTS ──────────────────────────────────────── */

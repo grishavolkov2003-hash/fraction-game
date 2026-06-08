@@ -27,6 +27,9 @@ function simplify(n, d) {
 }
 
 function fracEqual(f1, f2) {
+  if (f1.symbol !== undefined || f2.symbol !== undefined) {
+    return f1.symbol === f2.symbol;
+  }
   if (f1.whole !== undefined || f2.whole !== undefined) {
     return (f1.whole || 0) === (f2.whole || 0) && f1.n === f2.n && f1.d === f2.d;
   }
@@ -36,6 +39,7 @@ function fracEqual(f1, f2) {
 }
 
 function fracToStr(f) {
+  if (f.symbol !== undefined) return 'sym:' + f.symbol;
   if (f.whole !== undefined) return `${f.whole}+${f.n}/${f.d}`;
   return `${f.n}/${f.d}`;
 }
@@ -62,7 +66,10 @@ const LEVELS = {
 
 const MAX_ANSWER = { beginner: 8, easy: 20, hard: 50 };
 
-const OPERATIONS = ['multiply', 'divide', 'add', 'subtract', 'simplify', 'mixed'];
+const OPERATIONS = ['multiply', 'divide', 'add', 'subtract', 'simplify', 'mixed',
+                    'compare', 'fraction_of_number', 'equivalent_fractions'];
+
+const NO_MAX_CHECK = new Set(['simplify', 'mixed', 'compare', 'fraction_of_number', 'equivalent_fractions']);
 
 // ── Fraction Generation ───────────────────────────
 function randomFrac(min, max) {
@@ -133,7 +140,6 @@ function generateTask(operation, level) {
       const l = lcm(a.d, b.d);
       const an = a.n * (l / a.d);
       const bn = b.n * (l / b.d);
-      // ensure positive result — swap if needed
       const [left, right, bigN, smallN] = an >= bn
         ? [a, b, an, bn] : [b, a, bn, an];
       const raw = { n: bigN - smallN, d: l };
@@ -160,10 +166,37 @@ function generateTask(operation, level) {
       answer = simplify(f.n, f.d);
       problem = { type: 'single', label: 'Сократи дробь', frac: f };
     }
+    else if (operation === 'compare') {
+      const a = randomFrac(min, max);
+      const b = randomFrac(min, max);
+      const cross1 = a.n * b.d;
+      const cross2 = b.n * a.d;
+      const symbol = cross1 < cross2 ? '<' : cross1 > cross2 ? '>' : '=';
+      answer = { symbol };
+      problem = { type: 'binary', op: '?', left: a, right: b };
+    }
+    else if (operation === 'fraction_of_number') {
+      const b = randInt(2, Math.min(max, 9));
+      const a = randInt(1, b - 1);
+      const multMax = Math.max(1, Math.floor(maxAns / Math.max(a, 1)));
+      const mult = randInt(1, Math.max(1, multMax));
+      const k = b * mult;
+      const resultN = a * mult;
+      answer = { n: resultN, d: 1 };
+      problem = { type: 'binary', op: 'от', left: { n: a, d: b }, right: { n: k, d: 1 } };
+    }
+    else if (operation === 'equivalent_fractions') {
+      const raw = randomFrac(min, Math.min(max, 6));
+      const s = simplify(raw.n, raw.d);
+      const scale = randInt(2, 5);
+      const newDenom = s.d * scale;
+      const missingNum = s.n * scale;
+      answer = { n: missingNum, d: 1 };
+      problem = { type: 'equiv', original: s, newDenom };
+    }
   } while (
     attempts < 20 &&
-    operation !== 'simplify' &&
-    operation !== 'mixed' &&
+    !NO_MAX_CHECK.has(operation) &&
     (answer.n > maxAns || answer.d > maxAns || answer.n === 0)
   );
 
@@ -173,50 +206,13 @@ function generateTask(operation, level) {
 
 // ── Wrong Answer Generator ────────────────────────
 function generateChoices(correct, operation, problem) {
-  const seen = new Set([fracToStr(correct)]);
-  const wrongs = [];
+  // compare: always 3 symbol choices
+  if (operation === 'compare') {
+    return shuffle([{ symbol: '<' }, { symbol: '>' }, { symbol: '=' }]);
+  }
 
-  // School-mistake candidates based on operation
-  let smartCandidates = [];
-
-  if (operation === 'multiply' && problem?.left && problem?.right) {
-    const { left: a, right: b } = problem;
-    smartCandidates = [
-      simplify(a.n + b.n, a.d + b.d),          // добавил вместо умножил
-      simplify(a.n * b.n, a.d + b.d),           // числители умножил, знам сложил
-      simplify(a.n + b.n, a.d * b.d),           // числители сложил, знам умножил
-      simplify(a.n * b.d, a.d * b.n),           // перепутал порядок
-      { n: correct.n + 1, d: correct.d },
-      { n: correct.n, d: correct.d + 1 },
-    ];
-  } else if (operation === 'divide' && problem?.left && problem?.right) {
-    const { left: a, right: b } = problem;
-    smartCandidates = [
-      simplify(a.n * b.n, a.d * b.d),           // умножил вместо деления
-      simplify(a.n * b.d, a.d * b.n),           // перевернул не ту дробь
-      simplify(a.d * b.d, a.n * b.n),           // оба перевернул
-      { n: correct.n + 1, d: correct.d },
-      { n: correct.n, d: correct.d + 1 },
-    ];
-  } else if (operation === 'add' && problem?.left && problem?.right) {
-    const { left: a, right: b } = problem;
-    smartCandidates = [
-      simplify(a.n + b.n, a.d + b.d),
-      simplify(a.n * b.d + b.n, a.d * b.d),
-      simplify(a.n + b.n * (a.d / gcd(a.d, b.d)), lcm(a.d, b.d)),
-      { n: correct.n + 1, d: correct.d },
-      { n: correct.n, d: correct.d + 1 },
-    ];
-  } else if (operation === 'subtract' && problem?.left && problem?.right) {
-    const { left: a, right: b } = problem;
-    smartCandidates = [
-      simplify(a.n + b.n, lcm(a.d, b.d)),       // сложил вместо вычел
-      simplify(Math.abs(a.n - b.n), a.d + b.d), // вычел но сложил знам
-      simplify(a.n * b.d - b.n * a.d, a.d + b.d),
-      { n: correct.n + 1, d: correct.d },
-      { n: correct.n, d: correct.d + 1 },
-    ];
-  } else if (operation === 'mixed') {
+  // mixed: early return with whole+fraction variants
+  if (operation === 'mixed') {
     const { whole, n: cn, d: cd } = correct;
     const mSeen = new Set([fracToStr(correct)]);
     const choices = [correct];
@@ -236,7 +232,6 @@ function generateChoices(correct, operation, problem) {
       mSeen.add(key);
       choices.push(c);
     }
-    // fallback: just bump whole number
     let off = 3;
     while (choices.length < 4) {
       const c = { whole: whole + off, n: cn, d: cd };
@@ -245,13 +240,94 @@ function generateChoices(correct, operation, problem) {
       off++;
     }
     return shuffle(choices);
+  }
+
+  // fraction_of_number: 4 whole number choices
+  if (operation === 'fraction_of_number') {
+    const r = correct.n;
+    const seen = new Set([r]);
+    const choices = [correct];
+    const candidates = [r + 1, r - 1, r + 2, r - 2, r * 2, Math.round(r / 2)].filter(x => x > 0);
+    for (const c of candidates) {
+      if (choices.length >= 4) break;
+      if (!seen.has(c)) { seen.add(c); choices.push({ n: c, d: 1 }); }
+    }
+    let off = 3;
+    while (choices.length < 4) {
+      const c = r + off++;
+      if (!seen.has(c)) { seen.add(c); choices.push({ n: c, d: 1 }); }
+    }
+    return shuffle(choices);
+  }
+
+  // equivalent_fractions: 4 whole number choices
+  if (operation === 'equivalent_fractions') {
+    const r = correct.n;
+    const orig = problem.original;
+    const seen = new Set([r]);
+    const choices = [correct];
+    const candidates = [r + 1, r - 1, orig.n, problem.newDenom, r + 2, r - 2].filter(x => x > 0);
+    for (const c of candidates) {
+      if (choices.length >= 4) break;
+      if (!seen.has(c)) { seen.add(c); choices.push({ n: c, d: 1 }); }
+    }
+    let off = 3;
+    while (choices.length < 4) {
+      const c = r + off++;
+      if (!seen.has(c)) { seen.add(c); choices.push({ n: c, d: 1 }); }
+    }
+    return shuffle(choices);
+  }
+
+  // General case: smart wrong answers based on operation
+  const seen = new Set([fracToStr(correct)]);
+  const wrongs = [];
+  let smartCandidates = [];
+
+  if (operation === 'multiply' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n + b.n, a.d + b.d),
+      simplify(a.n * b.n, a.d + b.d),
+      simplify(a.n + b.n, a.d * b.d),
+      simplify(a.n * b.d, a.d * b.n),
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'divide' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n * b.n, a.d * b.d),
+      simplify(a.n * b.d, a.d * b.n),
+      simplify(a.d * b.d, a.n * b.n),
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'add' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n + b.n, a.d + b.d),
+      simplify(a.n * b.d + b.n, a.d * b.d),
+      simplify(a.n + b.n * (a.d / gcd(a.d, b.d)), lcm(a.d, b.d)),
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'subtract' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n + b.n, lcm(a.d, b.d)),
+      simplify(Math.abs(a.n - b.n), a.d + b.d),
+      simplify(a.n * b.d - b.n * a.d, a.d + b.d),
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
   } else if (operation === 'simplify' && problem?.frac) {
     const f = problem.frac;
     const g = gcd(f.n, f.d);
     smartCandidates = [
-      { n: f.n / gcd(f.n, f.d) + 1, d: f.d / gcd(f.n, f.d) },  // чуть мимо
-      { n: f.n, d: f.d },                                          // вообще не сократил
-      simplify(f.n, f.d + g),                                       // частично сократил
+      { n: f.n / gcd(f.n, f.d) + 1, d: f.d / gcd(f.n, f.d) },
+      { n: f.n, d: f.d },
+      simplify(f.n, f.d + g),
       { n: correct.n + 1, d: correct.d },
       { n: correct.n, d: correct.d + 1 },
     ];
@@ -277,7 +353,6 @@ function generateChoices(correct, operation, problem) {
     wrongs.push(s);
   }
 
-  // fallback random
   while (wrongs.length < 3) {
     const r = simplify(randInt(1, 15), randInt(2, 15));
     const key = fracToStr(r);
@@ -321,23 +396,10 @@ function at(ms, fn) {
   _animTimers.push(setTimeout(fn, ms));
 }
 
-function makeAVFrac(n, d, prefix) {
-  return `
-    <div class="av-frac">
-      <div class="av-slot" id="${prefix}n"><span class="av-val">${n}</span></div>
-      <div class="av-fline"></div>
-      <div class="av-slot" id="${prefix}d"><span class="av-val">${d}</span></div>
-    </div>`;
-}
-
 // ── Pre-render HTML builders ──────────────────────
-// All animation timings are baked into inline styles as animation-delay.
-// stage.innerHTML is set ONCE so layout never shifts.
-
-const S = 1.0; // seconds per step
+const S = 1.0;
 
 function hSlot(id, val, opts) {
-  // opts: { hlAnim, strikeDelay, newVal }
   let inner;
   if (opts && opts.strikeDelay != null) {
     const sd = opts.strikeDelay;
@@ -391,12 +453,19 @@ function playAnimation(problem, answer) {
   stage.innerHTML = '';
   document.getElementById('btn-hint-ok').classList.remove('visible');
 
+  if (problem.type === 'equiv') {
+    animEquivalent(stage, problem.original, problem.newDenom, answer);
+    return;
+  }
+
   if (problem.type === 'binary') {
     const { left: a, right: b, op } = problem;
     if (op === '×') animMultiply(stage, a, b, answer);
     else if (op === '÷') animDivide(stage, a, b, answer);
     else if (op === '+') animAdd(stage, a, b, answer);
     else if (op === '−') animSubtract(stage, a, b, answer);
+    else if (op === '?') animCompare(stage, a, b, answer);
+    else if (op === 'от') animFractionOf(stage, a, b.n, answer);
   } else {
     if (problem.label === 'Смешанное число') animMixed(stage, problem.frac, answer);
     else animSimplify(stage, problem.frac, answer);
@@ -557,6 +626,89 @@ function animMixed(stage, f, answer) {
   at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
 }
 
+function animCompare(stage, a, b, answer) {
+  const l = lcm(a.d, b.d);
+  const an = a.n * (l / a.d);
+  const bn = b.n * (l / b.d);
+  const sym = answer.symbol;
+
+  const tProb = 0.1, tCalcLCM = 0.5, tNewProb = 1.4, tCalcComp = 2.6, tFinal = 3.5;
+
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(a.n, a.d, '', null, null)}
+    <span class="av-op-sym">?</span>
+    ${hFrac(b.n, b.d, '', null, null)}
+  </div>`;
+  const calcLCMRow = hCalc(`НОК(${a.d}, ${b.d}) = <strong>${l}</strong> — общий знаменатель`, tCalcLCM);
+  const newProbRow = `<div class="av-calc-row" style="opacity:0;animation:gentleRise 0.55s ease ${tNewProb}s both">
+    <div class="av-prob-row">
+      ${hFrac(an, l, '', {hlAnim:`hlNum 0.4s ease ${tNewProb+0.3}s both`}, null)}
+      <span class="av-op-sym">?</span>
+      ${hFrac(bn, l, '', {hlAnim:`hlNum 0.4s ease ${tNewProb+0.3}s both`}, null)}
+    </div>
+  </div>`;
+  const compText = sym === '='
+    ? `<span class="hl-n">${an}</span> = <span class="hl-n">${bn}</span> — числители равны`
+    : `<span class="hl-n">${an}</span> ${sym} <span class="hl-n">${bn}</span> — сравниваем числители`;
+  const calcCompRow = hCalc(compText, tCalcComp);
+  const finalRow = `<div class="av-final-row" data-appear="${tFinal}" style="opacity:0;animation:gentleRise 0.7s ease ${tFinal}s both">
+    ${hFrac(a.n, a.d, '', null, null)}
+    <span class="av-whole-result" style="color:var(--correct);font-size:36px">${sym}</span>
+    ${hFrac(b.n, b.d, '', null, null)}
+  </div>`;
+
+  stage.innerHTML = probRow + calcLCMRow + newProbRow + calcCompRow + finalRow;
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
+}
+
+function animFractionOf(stage, frac, k, answer) {
+  const rawN = frac.n * k;
+  const tProb = 0.1, tCalcRewrite = 0.5, tCalcN = 1.3, tCalcDiv = 2.1, tFinal = 2.9;
+
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(frac.n, frac.d, '', null, null)}
+    <span class="av-op-sym" style="font-size:18px;color:var(--text)">от</span>
+    <span style="font-family:'Delta Gothic One',sans-serif;font-size:38px;color:var(--text)">${k}</span>
+  </div>`;
+  const calcRewriteRow = hCalc(`Это то же самое что <strong>${frac.n} × ${k} ÷ ${frac.d}</strong>`, tCalcRewrite);
+  const calcNRow = hCalc(`<span class="hl-n">${frac.n} × ${k}</span> = <strong>${rawN}</strong>`, tCalcN);
+  const calcDivRow = hCalc(`<strong>${rawN}</strong> ÷ <span class="hl-d">${frac.d}</span> = <strong>${answer.n}</strong>`, tCalcDiv);
+  const finalRow = `<div class="av-final-row" data-appear="${tFinal}" style="opacity:0;animation:gentleRise 0.7s ease ${tFinal}s both">
+    <span class="av-eq-sym">=</span>
+    <span class="av-whole-result">${answer.n}</span>
+  </div>`;
+
+  stage.innerHTML = probRow + calcRewriteRow + calcNRow + calcDivRow + finalRow;
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
+}
+
+function animEquivalent(stage, original, newDenom, answer) {
+  const scale = newDenom / original.d;
+  const tProb = 0.1, tCalcScale = 0.5, tCalcNum = 1.3, tRes = 2.1, tFinal = 2.9;
+
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(original.n, original.d, '', null, null)}
+    <span class="av-op-sym">=</span>
+    <div class="av-frac">
+      <div class="av-slot"><span class="av-val" style="color:var(--accent)">?</span></div>
+      <div class="av-fline"></div>
+      <div class="av-slot"><span class="av-val">${newDenom}</span></div>
+    </div>
+  </div>`;
+  const calcScaleRow = hCalc(`${newDenom} ÷ ${original.d} = <strong>${scale}</strong> <span class="av-tag">коэффициент</span>`, tCalcScale);
+  const calcNumRow = hCalc(`<span class="hl-n">${original.n} × ${scale}</span> = <strong>${answer.n}</strong> <span class="av-tag">умножаем числитель</span>`, tCalcNum);
+  const resRow = hRes(hFrac(answer.n, newDenom, '', null, null), tRes);
+  const finalRow = `<div class="av-final-row" data-appear="${tFinal}" style="opacity:0;animation:gentleRise 0.7s ease ${tFinal}s both">
+    <span class="av-eq-sym">=</span>
+    ${hFrac(original.n, original.d, '', null, null)}
+    <span class="av-eq-sym">=</span>
+    ${hFrac(answer.n, newDenom, '', null, null)}
+  </div>`;
+
+  stage.innerHTML = probRow + calcScaleRow + calcNumRow + resRow + finalRow;
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
+}
+
 // ── Sounds (Web Audio API) ────────────────────────
 let audioCtx = null;
 
@@ -654,7 +806,37 @@ function renderProblem(problem) {
   const wrap = document.getElementById('problem-wrap');
   wrap.innerHTML = '';
 
-  if (problem.type === 'binary') {
+  if (problem.type === 'equiv') {
+    // Рендерим: 2/3 = ?/9
+    wrap.appendChild(makeFracEl(problem.original));
+    const eq = document.createElement('span');
+    eq.className = 'op-symbol';
+    eq.textContent = '=';
+    wrap.appendChild(eq);
+    const qfrac = document.createElement('div');
+    qfrac.className = 'fraction';
+    const qnum = document.createElement('span');
+    qnum.className = 'frac-num frac-question';
+    qnum.textContent = '?';
+    const qline = document.createElement('div');
+    qline.className = 'frac-line';
+    const qden = document.createElement('span');
+    qden.className = 'frac-den';
+    qden.textContent = problem.newDenom;
+    qfrac.append(qnum, qline, qden);
+    wrap.appendChild(qfrac);
+  } else if (problem.type === 'binary' && problem.op === 'от') {
+    // Дробь "от" целого числа
+    wrap.appendChild(makeFracEl(problem.left));
+    const op = document.createElement('span');
+    op.className = 'op-symbol';
+    op.textContent = 'от';
+    wrap.appendChild(op);
+    const num = document.createElement('span');
+    num.className = 'whole-num';
+    num.textContent = problem.right.n;
+    wrap.appendChild(num);
+  } else if (problem.type === 'binary') {
     wrap.appendChild(makeFracEl(problem.left));
     const op = document.createElement('span');
     op.className = 'op-symbol';
@@ -792,7 +974,6 @@ function handleAnswer(chosen, btn, correct) {
   const isCorrect = fracEqual(chosen, correct);
   const overlay = document.getElementById('feedback-overlay');
 
-  // disable all buttons
   document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
 
   if (isCorrect) {
@@ -844,6 +1025,7 @@ function loadQuestion() {
 
   const grid = document.getElementById('choices-grid');
   grid.innerHTML = '';
+  grid.classList.remove('choices-grid--three');
 
   task.choices.forEach((frac, i) => {
     const btn = document.createElement('button');
@@ -851,7 +1033,14 @@ function loadQuestion() {
     btn._fracData = frac;
     btn.style.animationDelay = `${i * 0.05}s`;
 
-    if (frac.whole !== undefined) {
+    if (frac.symbol !== undefined) {
+      // compare: big symbol button
+      const sym = document.createElement('span');
+      sym.className = 'compare-sym';
+      sym.textContent = frac.symbol;
+      btn.appendChild(sym);
+      grid.classList.add('choices-grid--three');
+    } else if (frac.whole !== undefined) {
       btn.appendChild(makeMixedEl(frac.whole, frac.n, frac.d));
     } else {
       const s = simplify(frac.n, frac.d);
@@ -901,7 +1090,7 @@ function buildOps() {
   if (state.operation === 'all') {
     const pool = [];
     OPERATIONS.forEach(op => {
-      const count = op === 'simplify' ? 1 : 3;
+      const count = ['simplify', 'compare', 'equivalent_fractions', 'fraction_of_number'].includes(op) ? 1 : 3;
       for (let i = 0; i < count; i++) pool.push(op);
     });
     while (pool.length < state.totalQ) pool.push(OPERATIONS[pool.length % OPERATIONS.length]);
@@ -1018,7 +1207,19 @@ document.addEventListener('DOMContentLoaded', () => {
     clearAnimTimers();
     const stage = document.getElementById('anim-stage');
     stage.innerHTML = '';
-    const s = simplify(state.currentTask.answer.n, state.currentTask.answer.d);
+    const ans = state.currentTask.answer;
+
+    // compare: show symbol
+    if (ans.symbol !== undefined) {
+      const final = document.createElement('div');
+      final.className = 'av-final-row';
+      final.innerHTML = `<span class="av-whole-result" style="color:var(--correct)">${ans.symbol}</span>`;
+      stage.appendChild(final);
+      document.getElementById('btn-hint-ok').classList.add('visible');
+      return;
+    }
+
+    const s = simplify(ans.n, ans.d);
     const final = document.createElement('div');
     final.className = 'av-final-row';
     if (s.d === 1) {
