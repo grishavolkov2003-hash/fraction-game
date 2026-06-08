@@ -7,6 +7,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+button {
+  touch-action: manipulation;
+  -webkit-appearance: none;
+}
+
 :root {
   --bg: #F5F5F7;
   --white: #FFFFFF;
@@ -232,7 +237,7 @@ body {
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: var(--white);
+  background: var(--bg);
   color: var(--text-muted);
   font-size: 16px;
   font-weight: 700;
@@ -240,9 +245,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow);
   transition: background 0.15s ease, color 0.15s ease;
-  -webkit-appearance: none;
 }
 .btn-exit-game:active {
   background: var(--accent-light);
