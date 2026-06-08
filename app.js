@@ -364,11 +364,11 @@ function hFrac(n, d, prefix, nOpts, dOpts) {
 }
 
 function hCalc(content, delayS) {
-  return `<div class="av-calc-row" style="opacity:0;animation:gentleRise 0.55s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">${content}</div>`;
+  return `<div class="av-calc-row" data-appear="${delayS}" style="opacity:0;animation:gentleRise 0.55s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">${content}</div>`;
 }
 
 function hRes(fracHTML, delayS) {
-  return `<div class="av-res-row" style="opacity:0;animation:gentleRise 0.6s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">
+  return `<div class="av-res-row" data-appear="${delayS}" style="opacity:0;animation:gentleRise 0.6s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">
     <span class="av-eq-sym">=</span>${fracHTML}</div>`;
 }
 
@@ -381,7 +381,7 @@ function hFinal(answer, delayS) {
         <div class="av-fline av-fline-green"></div>
         <div class="av-slot"><span class="av-val">${s.d}</span></div>
       </div>`;
-  return `<div class="av-final-row" style="opacity:0;animation:gentleRise 0.7s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">
+  return `<div class="av-final-row" data-appear="${delayS}" style="opacity:0;animation:gentleRise 0.7s cubic-bezier(0.4,0,0.2,1) ${delayS}s both">
     <span class="av-eq-sym">=</span>${inner}</div>`;
 }
 
@@ -740,14 +740,32 @@ function addScore(base, bonus) {
 }
 
 // ── Hint Popup ────────────────────────────────────
+let _scrollInterval = null;
+let _animStartTime = 0;
+
 function showHint(problem, answer) {
   document.getElementById('hint-overlay').classList.add('active');
+  _animStartTime = Date.now();
   playAnimation(problem, answer);
+
+  clearInterval(_scrollInterval);
+  _scrollInterval = setInterval(() => {
+    const stage = document.getElementById('anim-stage');
+    if (!stage) return;
+    const elapsed = (Date.now() - _animStartTime) / 1000;
+    let lastEl = null;
+    stage.querySelectorAll('[data-appear]').forEach(el => {
+      if (parseFloat(el.dataset.appear) <= elapsed) lastEl = el;
+    });
+    if (lastEl) lastEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 250);
 }
 
 function hideHint() {
   document.getElementById('hint-overlay').classList.remove('active');
   clearAnimTimers();
+  clearInterval(_scrollInterval);
+  _scrollInterval = null;
 }
 
 // ── Answer Handler ────────────────────────────────
