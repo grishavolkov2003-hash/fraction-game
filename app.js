@@ -742,10 +742,12 @@ function addScore(base, bonus) {
 // ── Hint Popup ────────────────────────────────────
 let _scrollInterval = null;
 let _animStartTime = 0;
+let _lastScrolledEl = null;
 
 function showHint(problem, answer) {
   document.getElementById('hint-overlay').classList.add('active');
   _animStartTime = Date.now();
+  _lastScrolledEl = null;
   playAnimation(problem, answer);
 
   clearInterval(_scrollInterval);
@@ -757,8 +759,11 @@ function showHint(problem, answer) {
     stage.querySelectorAll('[data-appear]').forEach(el => {
       if (parseFloat(el.dataset.appear) <= elapsed) lastEl = el;
     });
-    if (lastEl) lastEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 250);
+    if (lastEl && lastEl !== _lastScrolledEl) {
+      _lastScrolledEl = lastEl;
+      lastEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, 150);
 }
 
 function hideHint() {
