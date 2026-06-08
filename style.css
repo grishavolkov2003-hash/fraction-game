@@ -19,6 +19,20 @@
   --shadow: 0 2px 12px rgba(0,0,0,0.08);
   --radius: 16px;
   --radius-sm: 10px;
+  --card-border: transparent;
+}
+
+[data-theme="dark"] {
+  --bg: #0F0F11;
+  --white: #1C1C1E;
+  --accent: #9B6FF5;
+  --accent-light: #2A1F4A;
+  --text: #F2F2F7;
+  --text-muted: #8E8E93;
+  --correct: #30D158;
+  --wrong: #FF453A;
+  --shadow: 0 2px 12px rgba(0,0,0,0.35);
+  --card-border: #2C2C2E;
 }
 
 html {
@@ -153,6 +167,29 @@ body {
   transform: scale(0.97);
   box-shadow: 0 2px 10px rgba(123,79,224,0.25);
 }
+
+/* ── THEME TOGGLE ─────────────────────────────────── */
+.btn-theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  -webkit-appearance: none;
+}
+.btn-theme-toggle:active { transform: scale(0.9); }
+
+.home-inner { position: relative; }
 
 /* ── GAME ─────────────────────────────────────────── */
 .game-header {
@@ -289,7 +326,7 @@ body {
   justify-content: center;
   min-height: 88px;
   padding: 12px;
-  border: 2px solid transparent;
+  border: 2px solid var(--card-border);
   border-radius: var(--radius);
   background: var(--white);
   cursor: pointer;
@@ -336,6 +373,26 @@ body {
   font-family: 'Delta Gothic One', sans-serif;
   font-size: 32px;
   color: var(--text);
+}
+
+/* ── MIXED NUMBERS ────────────────────────────────── */
+.mixed-num {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mixed-whole {
+  font-family: 'Delta Gothic One', sans-serif;
+  font-size: 32px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.av-mixed-final {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ── RESULTS ──────────────────────────────────────── */

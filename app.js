@@ -27,12 +27,16 @@ function simplify(n, d) {
 }
 
 function fracEqual(f1, f2) {
+  if (f1.whole !== undefined || f2.whole !== undefined) {
+    return (f1.whole || 0) === (f2.whole || 0) && f1.n === f2.n && f1.d === f2.d;
+  }
   const a = simplify(f1.n, f1.d);
   const b = simplify(f2.n, f2.d);
   return a.n === b.n && a.d === b.d;
 }
 
 function fracToStr(f) {
+  if (f.whole !== undefined) return `${f.whole}+${f.n}/${f.d}`;
   return `${f.n}/${f.d}`;
 }
 
@@ -58,7 +62,7 @@ const LEVELS = {
 
 const MAX_ANSWER = { beginner: 8, easy: 20, hard: 50 };
 
-const OPERATIONS = ['multiply', 'divide', 'add', 'simplify'];
+const OPERATIONS = ['multiply', 'divide', 'add', 'subtract', 'simplify', 'mixed'];
 
 // ── Fraction Generation ───────────────────────────
 function randomFrac(min, max) {
@@ -123,6 +127,34 @@ function generateTask(operation, level) {
       answer = simplify(raw.n, raw.d);
       problem = { type: 'binary', op: '+', left: a, right: b };
     }
+    else if (operation === 'subtract') {
+      const a = randomFrac(min, max);
+      const b = randomFrac(min, max);
+      const l = lcm(a.d, b.d);
+      const an = a.n * (l / a.d);
+      const bn = b.n * (l / b.d);
+      // ensure positive result — swap if needed
+      const [left, right, bigN, smallN] = an >= bn
+        ? [a, b, an, bn] : [b, a, bn, an];
+      const raw = { n: bigN - smallN, d: l };
+      answer = simplify(raw.n, raw.d);
+      problem = { type: 'binary', op: '−', left, right };
+    }
+    else if (operation === 'mixed') {
+      let n, d;
+      let innerAttempts = 0;
+      do {
+        d = randInt(min, Math.min(max, 9));
+        n = randInt(d + 1, d * 3);
+        innerAttempts++;
+      } while ((n % d === 0) && innerAttempts < 30);
+      if (n % d === 0) n += 1;
+      const whole = Math.floor(n / d);
+      const remN = n % d;
+      const g = gcd(remN, d);
+      answer = { whole, n: remN / g, d: d / g };
+      problem = { type: 'single', label: 'Смешанное число', frac: { n, d } };
+    }
     else if (operation === 'simplify') {
       const f = randomUnsimplifiedFrac(min, max);
       answer = simplify(f.n, f.d);
@@ -131,6 +163,7 @@ function generateTask(operation, level) {
   } while (
     attempts < 20 &&
     operation !== 'simplify' &&
+    operation !== 'mixed' &&
     (answer.n > maxAns || answer.d > maxAns)
   );
 
@@ -168,12 +201,33 @@ function generateChoices(correct, operation, problem) {
   } else if (operation === 'add' && problem?.left && problem?.right) {
     const { left: a, right: b } = problem;
     smartCandidates = [
-      simplify(a.n + b.n, a.d + b.d),           // классика: сложил знам
-      simplify(a.n * b.d + b.n, a.d * b.d),     // только один привёл
-      simplify(a.n + b.n * (a.d / gcd(a.d, b.d)), lcm(a.d, b.d)), // ошибка в приведении
+      simplify(a.n + b.n, a.d + b.d),
+      simplify(a.n * b.d + b.n, a.d * b.d),
+      simplify(a.n + b.n * (a.d / gcd(a.d, b.d)), lcm(a.d, b.d)),
       { n: correct.n + 1, d: correct.d },
       { n: correct.n, d: correct.d + 1 },
     ];
+  } else if (operation === 'subtract' && problem?.left && problem?.right) {
+    const { left: a, right: b } = problem;
+    smartCandidates = [
+      simplify(a.n + b.n, lcm(a.d, b.d)),       // сложил вместо вычел
+      simplify(Math.abs(a.n - b.n), a.d + b.d), // вычел но сложил знам
+      simplify(a.n * b.d - b.n * a.d, a.d + b.d),
+      { n: correct.n + 1, d: correct.d },
+      { n: correct.n, d: correct.d + 1 },
+    ];
+  } else if (operation === 'mixed') {
+    // correct is {whole, n, d}
+    const { whole, n: cn, d: cd } = correct;
+    return shuffle([
+      correct,
+      { whole: whole + 1, n: cn, d: cd },
+      { whole: Math.max(1, whole - 1), n: cn, d: cd },
+      { whole, n: Math.min(cd - 1, cn + 1), d: cd },
+    ].filter((c, i, arr) =>
+      c.whole > 0 && c.n > 0 && c.n < c.d &&
+      arr.findIndex(x => fracToStr(x) === fracToStr(c)) === i
+    ).slice(0, 4));
   } else if (operation === 'simplify' && problem?.frac) {
     const f = problem.frac;
     const g = gcd(f.n, f.d);
@@ -217,6 +271,25 @@ function generateChoices(correct, operation, problem) {
   }
 
   return shuffle([correct, ...wrongs]);
+}
+
+// ── Mixed Number Element Builders ─────────────────
+function makeMixedEl(whole, n, d) {
+  const wrap = document.createElement('div');
+  wrap.className = 'mixed-num';
+  const w = document.createElement('span');
+  w.className = 'mixed-whole';
+  w.textContent = whole;
+  wrap.appendChild(w);
+  wrap.appendChild(makeFracEl({ n, d }));
+  return wrap;
+}
+
+function hMixed(whole, n, d) {
+  return `<div class="av-mixed-final">
+    <span class="av-whole-result">${whole}</span>
+    ${hFrac(n, d, '', null, null)}
+  </div>`;
 }
 
 // ── Solution Video Animation ──────────────────────
@@ -306,8 +379,10 @@ function playAnimation(problem, answer) {
     if (op === '×') animMultiply(stage, a, b, answer);
     else if (op === '÷') animDivide(stage, a, b, answer);
     else if (op === '+') animAdd(stage, a, b, answer);
+    else if (op === '−') animSubtract(stage, a, b, answer);
   } else {
-    animSimplify(stage, problem.frac, answer);
+    if (problem.label === 'Смешанное число') animMixed(stage, problem.frac, answer);
+    else animSimplify(stage, problem.frac, answer);
   }
 }
 
@@ -412,6 +487,56 @@ function animSimplify(stage, f, answer) {
   const calcDRow = hCalc(`<span class="hl-d">${f.d}</span> ÷ ${g} = <strong>${answer.d}</strong> <span class="av-tag">знаменатель</span>`, tCalcD);
 
   stage.innerHTML = probRow + calcGRow + calcNRow + calcDRow + hFinal(answer, tFinal);
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
+}
+
+function animSubtract(stage, a, b, answer) {
+  const l = lcm(a.d, b.d);
+  const an = a.n * (l / a.d);
+  const bn = b.n * (l / b.d);
+  const rawN = an - bn;
+  const g = gcd(rawN, l);
+
+  const tProb = 0.1, tCalcLCM = 0.5, tNewProb = 1.4, tCalcDiff = 2.6, tRes = 3.5;
+  const tCalcG = 4.3, tStrike = 5.1, tFinal = g > 1 ? 6.3 : 4.3;
+
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(a.n, a.d, '', null, null)}
+    <span class="av-op-sym">−</span>
+    ${hFrac(b.n, b.d, '', null, null)}
+  </div>`;
+  const calcLCMRow = hCalc(`НОК(${a.d}, ${b.d}) = <strong>${l}</strong>`, tCalcLCM);
+  const newProbRow = `<div class="av-calc-row" style="opacity:0;animation:gentleRise 0.55s ease ${tNewProb}s both">
+    <div class="av-prob-row">
+      ${hFrac(an, l, '', {hlAnim:`hlNum 0.4s ease ${tNewProb+0.3}s both`}, null)}
+      <span class="av-op-sym">−</span>
+      ${hFrac(bn, l, '', {hlAnim:`hlNum 0.4s ease ${tNewProb+0.3}s both`}, null)}
+    </div>
+  </div>`;
+  const calcDiffRow = hCalc(`<span class="hl-n">${an} − ${bn}</span> = <strong>${rawN}</strong>`, tCalcDiff);
+  const resRow = g > 1
+    ? hRes(hFrac(rawN, l, '', {strikeDelay: tStrike, newVal: answer.n}, {strikeDelay: tStrike, newVal: answer.d}), tRes)
+    : hRes(hFrac(rawN, l, '', null, null), tRes);
+  const calcGRow = g > 1 ? hCalc(`НОД(${rawN}, ${l}) = <strong>${g}</strong> — сокращаем`, tCalcG) : '';
+
+  stage.innerHTML = probRow + calcLCMRow + newProbRow + calcDiffRow + resRow + calcGRow + hFinal(answer, tFinal);
+  at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
+}
+
+function animMixed(stage, f, answer) {
+  const tProb = 0.1, tCalcDiv = 0.5, tCalcRem = 1.4, tFinal = 2.5;
+  const rem = f.n - f.d * answer.whole;
+
+  const probRow = `<div class="av-prob-row" style="opacity:0;animation:gentleRise 0.55s ease ${tProb}s both">
+    ${hFrac(f.n, f.d, '', null, null)}
+  </div>`;
+  const calcDivRow = hCalc(`${f.n} ÷ ${f.d} = <strong>${answer.whole}</strong> <span class="av-tag">целая часть</span>`, tCalcDiv);
+  const calcRemRow = hCalc(`${f.n} − ${f.d} × ${answer.whole} = <strong>${rem}</strong> <span class="av-tag">остаток → числитель</span>`, tCalcRem);
+  const finalRow = `<div class="av-final-row" style="opacity:0;animation:gentleRise 0.7s ease ${tFinal}s both">
+    <span class="av-eq-sym">=</span>${hMixed(answer.whole, answer.n, answer.d)}
+  </div>`;
+
+  stage.innerHTML = probRow + calcDivRow + calcRemRow + finalRow;
   at((tFinal + 1.3) * 1000, () => document.getElementById('btn-hint-ok').classList.add('visible'));
 }
 
@@ -676,14 +801,18 @@ function loadQuestion() {
     btn._fracData = frac;
     btn.style.animationDelay = `${i * 0.05}s`;
 
-    const s = simplify(frac.n, frac.d);
-    if (s.d === 1) {
-      const span = document.createElement('span');
-      span.className = 'whole-num';
-      span.textContent = s.n;
-      btn.appendChild(span);
+    if (frac.whole !== undefined) {
+      btn.appendChild(makeMixedEl(frac.whole, frac.n, frac.d));
     } else {
-      btn.appendChild(makeFracEl(frac));
+      const s = simplify(frac.n, frac.d);
+      if (s.d === 1) {
+        const span = document.createElement('span');
+        span.className = 'whole-num';
+        span.textContent = s.n;
+        btn.appendChild(span);
+      } else {
+        btn.appendChild(makeFracEl(frac));
+      }
     }
 
     btn.addEventListener('click', () => handleAnswer(frac, btn, task.answer), { once: true });
@@ -800,7 +929,24 @@ function initToggles(groupId, onSelect) {
 }
 
 // ── Init ──────────────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem('frac_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('btn-theme').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('frac_theme', next);
+  document.getElementById('btn-theme').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+
   initToggles('level-group', val => { state.level = val; });
   initToggles('op-group', val => { state.operation = val; });
 
