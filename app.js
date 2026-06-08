@@ -164,7 +164,7 @@ function generateTask(operation, level) {
     attempts < 20 &&
     operation !== 'simplify' &&
     operation !== 'mixed' &&
-    (answer.n > maxAns || answer.d > maxAns)
+    (answer.n > maxAns || answer.d > maxAns || answer.n === 0)
   );
 
   const choices = generateChoices(answer, operation, problem);
@@ -279,9 +279,9 @@ function generateChoices(correct, operation, problem) {
 
   // fallback random
   while (wrongs.length < 3) {
-    const r = { n: randInt(1, 15), d: randInt(2, 15) };
-    const key = fracToStr(simplify(r.n, r.d));
-    if (!seen.has(key)) {
+    const r = simplify(randInt(1, 15), randInt(2, 15));
+    const key = fracToStr(r);
+    if (!seen.has(key) && r.n > 0 && r.d > 0) {
       seen.add(key);
       wrongs.push(r);
     }
@@ -861,7 +861,7 @@ function loadQuestion() {
         span.textContent = s.n;
         btn.appendChild(span);
       } else {
-        btn.appendChild(makeFracEl(frac));
+        btn.appendChild(makeFracEl(s));
       }
     }
 
