@@ -751,12 +751,22 @@ function showHint(problem, answer) {
   playAnimation(problem, answer);
 
   clearInterval(_scrollInterval);
+  const stage = document.getElementById('anim-stage');
+
+  const stopAutoScroll = () => {
+    clearInterval(_scrollInterval);
+    _scrollInterval = null;
+  };
+  stage.addEventListener('touchstart', stopAutoScroll, { once: true, passive: true });
+  stage.addEventListener('mousedown', stopAutoScroll, { once: true });
+
   _scrollInterval = setInterval(() => {
-    const stage = document.getElementById('anim-stage');
-    if (!stage) return;
+    if (!_scrollInterval) return;
+    const s = document.getElementById('anim-stage');
+    if (!s) return;
     const elapsed = (Date.now() - _animStartTime) / 1000;
     let lastEl = null;
-    stage.querySelectorAll('[data-appear]').forEach(el => {
+    s.querySelectorAll('[data-appear]').forEach(el => {
       if (parseFloat(el.dataset.appear) <= elapsed) lastEl = el;
     });
     if (lastEl && lastEl !== _lastScrolledEl) {
