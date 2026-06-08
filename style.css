@@ -446,10 +446,15 @@ body {
   min-width: 32px;
 }
 
-.choice-btn .whole-num {
+.whole-num {
   font-family: 'Delta Gothic One', sans-serif;
-  font-size: 32px;
+  font-size: 42px;
   color: var(--text);
+  line-height: 1.1;
+}
+
+.choice-btn .whole-num {
+  font-size: 32px;
 }
 
 /* ── MIXED NUMBERS ────────────────────────────────── */
