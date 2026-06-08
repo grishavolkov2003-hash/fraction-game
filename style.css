@@ -124,6 +124,25 @@ body {
   flex-wrap: wrap;
 }
 
+#op-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+#op-group .toggle-btn {
+  flex: none;
+  font-size: 12px;
+  padding: 11px 4px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* 7-я кнопка (Смешанные) — растянуть на оставшиеся 2 ячейки */
+#op-group .toggle-btn:nth-child(7) {
+  grid-column: span 2;
+}
+
 .toggle-btn {
   flex: 1;
   min-width: 80px;
